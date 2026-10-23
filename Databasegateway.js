@@ -327,6 +327,8 @@ const ACTION_HANDLERS = {
   bacaSheet: aksiBacaSheet_,
   syncPoKeluar: aksiSyncPoKeluar_,
   updateQtyTerkirimPoKeluar: aksiUpdateQtyTerkirimPoKeluar_,
+  setQtyTerkirimPoKeluarBatch: function (ss, body) { return aksiSetQtyTerkirimPoKeluarBatch_(ss, body); },
+  isiBulanHutangKosong: function (ss, body) { return aksiIsiBulanHutangKosong_(ss, body); },
   syncNilaiDataBersihBatch: aksiSyncNilaiDataBersihBatch_,
   syncTempoTokoFull: aksiSyncTempoTokoFull_,
   perpanjangTempoPerCustomer: aksiPerpanjangTempoPerCustomer_,
