@@ -314,7 +314,8 @@ const SHEET_BACA_DIIZINKAN = [
   'PENJUALAN',
   'LOG_INVOICE_CETAK',  // ⬅️ BARU: dibaca menu "Catat Susulan Invoice Tercetak" di inventory
   'TRANSAKSI',          // ⬅️ BARU (migrasi TRANSAKSI, Oktober 2026) -- lihat GatewayTransaksi.js
-  'DETAIL_TRANSAKSI'    // ⬅️ BARU (migrasi DETAIL_TRANSAKSI, Oktober 2026)
+  'DETAIL_TRANSAKSI',    // ⬅️ BARU (migrasi DETAIL_TRANSAKSI, Oktober 2026)
+  'EKSPEDISI'
 ];
 
 const ACTION_HANDLERS = {
@@ -1254,7 +1255,7 @@ function aksiAppendEkspedisi_(ss, body) {
   if (!sh) throw new Error('Sheet "' + EKSPEDISI_SHEET + '" tidak ditemukan di database.');
 
   const startRow = sh.getLastRow() + 1;
-  sh.getRange(startRow, 1, rows.length, EKSPEDISI_COLS).setValues(rows);
+  sh.getRange(startRow, 1, rows.length, rows[0].length).setValues(rows);
   sh.getRange(startRow, EKSPEDISI_QTY_COL, rows.length, 1).setNumberFormat('#,##0');
   sh.getRange(startRow, EKSPEDISI_HARGA_COL, rows.length, 1).setNumberFormat('#,##0');
 
