@@ -1535,6 +1535,51 @@ function aksiSyncHutangDariPembelian_(ss, body) {
 }
 
 /* ------------------------------------------------------
+   KETERANGAN ADJUSTMENT (Nov 2026) — dipakai aksi bayarHutangMultiPB DAN
+   prosesPembayaranPenjualan. Kalau metode bayar = ADJUSTMENT, admin WAJIB
+   mengetik keterangannya (pembulatan / biaya admin / sparepart / dll).
+   Keterangan disimpan DI DALAM teks riwayat, pada bagian METODE:
+       PENJUALAN: "POST-NNN - dd/MM/yyyy - RpX - ADJUSTMENT (pembulatan)"
+       HUTANG   : "dd/MM/yyyy - RpX - ADJUSTMENT (biaya admin)"
+   Semua parser riwayat yang memecah teks dengan " - " tidak terganggu karena
+   keterangan dibersihkan dari " - ", tanda kurung, dan enter. Metode
+   TUNAI / TRANSFER tidak berubah. Riwayat ADJUSTMENT lama (tanpa keterangan)
+   tetap terbaca. Aturan di sini HARUS sama dengan validasiKeteranganAdjustment_
+   di Pembayaran.gs sisi inventory (dua project terpisah).
+   ------------------------------------------------------ */
+const ADJUSTMENT_KET_MIN_GW_ = 3;
+const ADJUSTMENT_KET_MAX_GW_ = 60;
+
+function bersihkanKeteranganAdjustmentGateway_(ket) {
+  return String(ket || '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+-\s+/g, ' ')
+    .replace(/[()]/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .substring(0, ADJUSTMENT_KET_MAX_GW_)
+    .trim();
+}
+
+// metodeBayar sudah huruf besar. Return keterangan bersih ('' kalau bukan ADJUSTMENT),
+// throw Error kalau ADJUSTMENT tapi keterangan kosong / terlalu pendek.
+function ambilKeteranganAdjustmentGateway_(metodeBayar, ketMentah) {
+  if (metodeBayar !== 'ADJUSTMENT') return '';
+  const ket = bersihkanKeteranganAdjustmentGateway_(ketMentah);
+  if (ket.length < ADJUSTMENT_KET_MIN_GW_) {
+    throw new Error('Metode Adjustment wajib diisi keterangannya (minimal ' + ADJUSTMENT_KET_MIN_GW_ +
+      ' huruf), contoh: pembulatan, biaya admin, sparepart.');
+  }
+  return ket;
+}
+
+// Teks METODE yang ditulis ke sel riwayat.
+function susunTeksMetodeBayarGateway_(metodeBayar, keterangan) {
+  if (metodeBayar === 'ADJUSTMENT' && keterangan) return 'ADJUSTMENT (' + keterangan + ')';
+  return metodeBayar;
+}
+
+/* ------------------------------------------------------
    AKSI: bayarHutangMultiPB — versi database dari
    prosesPembayaranMultiPB() (PembayaranHutang.gs lama). Lock lokal
    yang dulu dipakai di inventory TIDAK PERLU dibawa ke sini —
@@ -1544,6 +1589,7 @@ function aksiSyncHutangDariPembelian_(ss, body) {
    sekarang titiknya di sini (terpusat), bukan lokal per-device.
 
    body: { bulan, supplier, tglBayarText ("dd/MM/yyyy"), metodeBayar,
+           keteranganAdjustment (WAJIB kalau metodeBayar = "ADJUSTMENT"),
            payments: [{ rowIndex, pb, jumlahBayar }, ...] }
    ------------------------------------------------------ */
 function aksiBayarHutangMultiPB_(ss, body) {
@@ -1559,6 +1605,9 @@ function aksiBayarHutangMultiPB_(ss, body) {
   if (metodeBayar !== 'TUNAI' && metodeBayar !== 'TRANSFER' && metodeBayar !== 'ADJUSTMENT') {
     throw new Error('Metode pembayaran harus TUNAI, TRANSFER, atau ADJUSTMENT.');
   }
+  // ⬅️ BARU: ADJUSTMENT wajib punya keterangan
+  const keteranganAdj = ambilKeteranganAdjustmentGateway_(metodeBayar, body.keteranganAdjustment);
+  const metodeTeks = susunTeksMetodeBayarGateway_(metodeBayar, keteranganAdj);
   if (payments.length === 0) throw new Error('Centang minimal 1 PB untuk dibayar.');
 
   const hutang = ss.getSheetByName(HUTANG_SHEET);
@@ -1619,7 +1668,7 @@ function aksiBayarHutangMultiPB_(ss, body) {
     // riwayat DI BARIS PB INI SENDIRI, mulai kolom K, kolom kosong pertama
     let targetCol = HUTANG_RIWAYAT_START_COL;
     while (hutang.getRange(p.rowIndex, targetCol).getValue()) targetCol++;
-    const cellText = tglBayarText + ' - ' + formatRupiahGatewayHutang_(p.jumlahBayar) + ' - ' + metodeBayar;
+    const cellText = tglBayarText + ' - ' + formatRupiahGatewayHutang_(p.jumlahBayar) + ' - ' + metodeTeks;
     hutang.getRange(p.rowIndex, targetCol).setValue(cellText);
 
     rowIndexesUpdated.push(p.rowIndex);
@@ -1630,7 +1679,7 @@ function aksiBayarHutangMultiPB_(ss, body) {
 
   const pbUnik = pbBaruLunas.filter(function (pb, i) { return pbBaruLunas.indexOf(pb) === i; });
 
-  return { ok: true, jumlahPBDibayar: parsed.length, pbBaruLunas: pbUnik };
+  return { ok: true, jumlahPBDibayar: parsed.length, pbBaruLunas: pbUnik, keteranganAdjustment: keteranganAdj };
 }
 
 /* ------------------------------------------------------
@@ -2492,7 +2541,8 @@ function getNextNoPostGateway_(ss, sh) {
    bersamaan) tetap terjaga, cuma titiknya sekarang di sini.
 
    body: { noInvoice, jumlahBayar, metodeBayar ("TUNAI"/"TRANSFER"/
-   "ADJUSTMENT"), tglBayarText ("dd/MM/yyyy", sudah diformat di sisi
+   "ADJUSTMENT"), keteranganAdjustment (WAJIB kalau ADJUSTMENT),
+   tglBayarText ("dd/MM/yyyy", sudah diformat di sisi
    inventory lewat formatTglBayarInput_) }
 
    Validasi gagal -> throw Error (sama kayak aksi gateway lain), BUKAN
@@ -2510,6 +2560,9 @@ function aksiProsesPembayaranPenjualan_(ss, body) {
   if (metodeBayar !== 'TUNAI' && metodeBayar !== 'TRANSFER' && metodeBayar !== 'ADJUSTMENT') {
     throw new Error('Metode pembayaran harus TUNAI atau TRANSFER atau ADJUSTMENT.');
   }
+  // ⬅️ BARU: ADJUSTMENT wajib punya keterangan
+  const keteranganAdj = ambilKeteranganAdjustmentGateway_(metodeBayar, body.keteranganAdjustment);
+  const metodeTeks = susunTeksMetodeBayarGateway_(metodeBayar, keteranganAdj);
   if (!tglBayarText) throw new Error('Tanggal pembayaran tidak valid.');
 
   const sh = ss.getSheetByName(PENJUALAN_SHEET);
@@ -2543,7 +2596,7 @@ function aksiProsesPembayaranPenjualan_(ss, body) {
 
   const noPost = getNextNoPostGateway_(ss, sh);
 
-  const cellText = noPost + ' - ' + tglBayarText + ' - ' + formatRupiahGatewayPenjualan_(jumlahBayar) + ' - ' + metodeBayar;
+  const cellText = noPost + ' - ' + tglBayarText + ' - ' + formatRupiahGatewayPenjualan_(jumlahBayar) + ' - ' + metodeTeks;
   sh.getRange(rowIndex, targetCol).setValue(cellText);
 
   const lastColSheet = Math.max(sh.getLastColumn(), targetCol);
@@ -2555,7 +2608,7 @@ function aksiProsesPembayaranPenjualan_(ss, body) {
   }
 
   const riwayatBaru = current.riwayatPembayaran.slice();
-  riwayatBaru.push({ noPost: noPost, tanggal: tglBayarText, jumlah: jumlahBayar, metode: metodeBayar });
+  riwayatBaru.push({ noPost: noPost, tanggal: tglBayarText, jumlah: jumlahBayar, metode: metodeTeks });
 
   return {
     ok: true,
@@ -2567,7 +2620,8 @@ function aksiProsesPembayaranPenjualan_(ss, body) {
     status: statusBaru === 'LUNAS' ? 'Lunas' : 'Cicilan',
     noPost: noPost,
     riwayatPembayaran: riwayatBaru,
-    jadiLunas: statusBaru === 'LUNAS'
+    jadiLunas: statusBaru === 'LUNAS',
+    keteranganAdjustment: keteranganAdj
   };
 }
 
