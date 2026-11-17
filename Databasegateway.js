@@ -361,6 +361,7 @@ const ACTION_HANDLERS = {
   simpanTransaksiDraft: function (ss, body) { return aksiSimpanTransaksiDraft_(ss, body); },
   tandaiDoneTransaksi: function (ss, body) { return aksiTandaiDoneTransaksi_(ss, body); },
   ubahStatusTransaksi: function (ss, body) { return aksiUbahStatusTransaksi_(ss, body); },
+  ubahRiwayatPembayaran: function (ss, body) { return aksiUbahRiwayatPembayaran_(ss, body); },
   updateTempoTransaksiBatch: function (ss, body) { return aksiUpdateTempoTransaksiBatch_(ss, body); }
 };
 
