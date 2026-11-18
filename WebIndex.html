@@ -18,7 +18,7 @@
       <div class="logo-full"></div>
       <h1><span class="merek-nama">SANFELO</span> Admin</h1>
       <p class="redup">Masuk dengan nama & PIN admin</p>
-      <label>Nama admin<input id="loginNama" required placeholder="mis. ADMIN"></label>
+      <label>Nama admin<input id="loginNama" required placeholder="NUR / SILVA / ADMIN" autocapitalize="characters"></label>
       <label>PIN<input id="loginPin" type="password" inputmode="numeric" required placeholder="••••••"></label>
       <div id="loginPesan" class="pesan-error"></div>
       <button class="tombol utama lebar" type="submit" id="tombolLogin">Masuk</button>
@@ -70,7 +70,7 @@
         <div class="kepala-kanan">
           <label class="chip-latihan" data-fitur="latihan" title="Coba semua alur (termasuk cetak) di file latihan, data asli tidak berubah"><input type="checkbox" id="modeLatihan"> Mode latihan</label>
         <div class="chip-tgl"><small>Hari ini</small><b id="tglHariIni"></b></div>
-          <div class="chip-admin"><span id="namaAdmin"></span><button class="tombol kecil" id="tombolKeluar">Keluar</button></div>
+          <div class="chip-admin"><button class="tombol kecil" id="tombolSegarkan" type="button" title="Ambil ulang data terbaru dari spreadsheet">🔄<span class="teks-segar"> Segarkan</span></button><span id="namaAdmin"></span><button class="tombol kecil" id="tombolKeluar">Keluar</button></div>
         </div>
       </header>
 
@@ -363,7 +363,20 @@
 
       <!-- AKTIVITAS -->
       <section class="hal tersembunyi" id="hal-aktivitas">
-        <div class="kartu"><div id="tabelLog"></div></div>
+        <div class="kartu">
+          <div class="filter"><label>Admin<select id="logAdmin"><option value="">Semua admin</option></select></label><label>Cari<input id="logCari" placeholder="mis. INV-2026, PETTY CASH, HAPUS"></label><button class="tombol gelap" id="logTampil" type="button">Tampilkan</button></div>
+          <p class="redup">Setiap login, simpan, ubah, hapus & cetak dari web tercatat dengan nama admin yang login (sheet LOG_WEB).</p>
+          <div id="tabelLog"></div>
+        </div>
+        <div class="kartu tersembunyi" id="kartuPinAdmin">
+          <div class="kartu-kepala"><h4>👤 Akun admin (khusus ADMIN)</h4></div>
+          <p class="redup">Buat atau ganti PIN admin lain, mis. NUR dan SILVA. PIN lama langsung tidak berlaku.</p>
+          <div class="form-grid tiga"><label>Nama admin<input id="pinNama" list="dlNamaAdmin" placeholder="NUR / SILVA" autocapitalize="characters"></label><datalist id="dlNamaAdmin"><option value="NUR"><option value="SILVA"></datalist>
+            <label>PIN baru (4-8 angka)<input id="pinBaru" type="password" inputmode="numeric" autocomplete="new-password"></label>
+            <label>Ulangi PIN<input id="pinUlang" type="password" inputmode="numeric" autocomplete="new-password"></label></div>
+          <div id="pinPesan"></div>
+          <div class="aksi-bawah"><span class="redup" id="pinDaftar" style="align-self:center"></span><button class="tombol utama" id="pinSimpan" type="button">Simpan PIN</button></div>
+        </div>
       </section>
     </main>
   </div>

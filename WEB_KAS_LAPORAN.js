@@ -44,7 +44,8 @@ function webDaftarKas_(a) {
         if (r[c] !== '' && r[c] !== null) { kategori = kat[c - 2][1]; nominal = Number(r[c]) || 0; }
       }
       baris.push({ no: mulai + i, tanggal: r[0] instanceof Date ? webTgl_(r[0]) : '', tglGrup: tglTerakhir, ket: r[1],
-        kategori: kategori, debet: c2Debet_(kat, r), kredit: c2Kredit_(kat, r), saldo: Number(r[7]) || 0, nominal: nominal });
+        kategori: kategori, debet: c2Debet_(kat, r), kredit: c2Kredit_(kat, r), saldo: Number(r[7]) || 0, nominal: nominal,
+        kunci: webKasKategoriBaris_(kat, r).kunci, catatan: r.length > 8 ? String(r[8] || '') : '' }); // kunci & tglGrup dipakai ubah/hapus (WEB_KAS_CRUD.js)
     });
   }
   const bulan = String(a.bulan || '');

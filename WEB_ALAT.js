@@ -300,7 +300,7 @@ function webPerpanjangTempo_(a, admin) {
   if (!WEB_LATIHAN_) {
     // ringkasan G:H di TEMPO TOKO inventory ikut diperbarui (di inventory ditulis oleh updateStatusPembelianAll_)
     try {
-      const shInv = SpreadsheetApp.openById(INVENTORY_SS_ID_).getSheetByName('TEMPO TOKO');
+      const shInv = webInventorySS_().getSheetByName('TEMPO TOKO');
       if (shInv) {
         const m2 = inv.ringkasanTokoMentah_();
         inv.writeRingkasanToko_(shInv, m2.customerOrder, m2.customerInfo);

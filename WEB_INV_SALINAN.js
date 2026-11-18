@@ -11224,7 +11224,7 @@ function webInvSpreadsheetApp_() {
     getActive: function () { return webInvSpreadsheet_(); },
     flush: function () { asli.flush(); },
     // file DATABASE dibuka langsung oleh inventory (mis. PETTY CASH) -> boleh ditulis, sama seperti di inventory
-    openById: function (id) { return id === asli.getActiveSpreadsheet().getId() ? webSS_() : webInvBacaSaja_(asli.openById(id)); }, // file DATABASE (latihan: file latihan)
+    openById: function (id) { return id === asli.getActiveSpreadsheet().getId() ? webSS_() : webInvBacaSaja_(id === INVENTORY_SS_ID_ ? webInventorySS_() : asli.openById(id)); }, // file DATABASE (latihan: file latihan)
     // popup spreadsheet tidak ada di web: pesan alert dijadikan error supaya tampil di web
     getUi: function () {
       const gagal = function (m) { throw new Error(String(m && m.message ? m.message : m)); };
