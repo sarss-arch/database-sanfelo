@@ -372,6 +372,13 @@ function doPost(e) {
   } catch (err) {
     hasil = { ok: false, error: String(err && err.message ? err.message : err) };
   }
+  // WEB_PERCEPAT.js: inventory baru saja menulis lewat gateway -> simpanan baca web admin
+  // dianggap kedaluwarsa supaya web langsung menampilkan data terbaru. Tidak mengubah hasil.
+  try {
+    const aksiMasuk = String(JSON.parse(e.postData.contents).action || '');
+    const baca = (typeof WEB_AKSI_BACA_ !== 'undefined' && WEB_AKSI_BACA_.indexOf(aksiMasuk) !== -1);
+    if (!baca && typeof webCacheNaikkanVersi_ === 'function') webCacheNaikkanVersi_();
+  } catch (errVersi) { /* abaikan */ }
   return ContentService
     .createTextOutput(JSON.stringify(hasil))
     .setMimeType(ContentService.MimeType.JSON);

@@ -97,7 +97,7 @@ function webApi(token, aksi, args) {
     const admin = webCekSesi_(token);
     const fn = WEB_API_[aksi];
     if (!fn) throw new Error('Aksi "' + aksi + '" tidak dikenal.');
-    const hasil = fn(args || {}, admin);
+    const hasil = webJalankanAksi_(aksi, fn, args || {}, admin); // WEB_PERCEPAT.js: simpanan baca + versi data
     return webAman_({ ok: true, data: hasil, latihan: WEB_LATIHAN_ ? WEB_LATIHAN_CATAT_ : null });
   } catch (err) {
     const pesan = String(err && err.message ? err.message : err).replace(/^Gateway menolak: /, '');
@@ -117,7 +117,12 @@ const WEB_API_ = {
   bayarHutang: function (a, admin) { return webProsesPembayaranMultiPB_(a, admin); },
   bulanHutang: function () { return webDaftarBulanHutang_(); },
   detailInvoice: function (a) { return webDetailInvoice_(a.noInvoice); },
-  logWeb: function () { return webBacaLog_(); },
+  logWeb: function (a) { return webBacaLog_(a); },
+  daftarAdmin: function () { return webDaftarAdmin_(); },
+  aturPinAdmin: function (a, admin) { return webAturPinAdmin_(a, admin); },
+  // WEB_KAS_CRUD.js: ubah / hapus baris petty cash & buku bank
+  ubahKas: function (a, admin) { return webUbahKas_(a, admin); },
+  hapusKas: function (a, admin) { return webHapusKas_(a, admin); },
   // WEB_PO_MASUK.js
   masterPO: function () { return webMasterPO_(); },
   tambahCustomer: function (a, admin) { return webTambahCustomer_(a, admin); },
@@ -222,10 +227,17 @@ function webSiapkanLatihan_(a) {
 // (salinan di database_SANFELO belum diperbarui), jadi web membaca dari inventory --
 // sama dengan rumus PO_MASUK / SURAT JALAN / HARGATOKO di spreadsheet inventory.
 const WEB_SHEET_MASTER_ = ['DATA_BERSIH', 'DISKON'];
+// PERCEPAT: file inventory_SANFELO cukup dibuka SEKALI per permintaan (dulu dibuka ulang
+// setiap kali DATA_BERSIH / DISKON / form dibaca -- tiap buka bisa 1-3 detik)
+var WEB_INV_SS_ = null;
+function webInventorySS_() {
+  if (!WEB_INV_SS_) WEB_INV_SS_ = SpreadsheetApp.openById(INVENTORY_SS_ID_);
+  return WEB_INV_SS_;
+}
 // nilai sel di form inventory (dipakai supaya nomor yang sedang tampil di form inventory tidak dipakai web)
 function webNilaiFormInventory_(sheet, a1) {
   try {
-    const sh = SpreadsheetApp.openById(INVENTORY_SS_ID_).getSheetByName(sheet);
+    const sh = webInventorySS_().getSheetByName(sheet);
     return sh ? String(sh.getRange(a1).getValue() || '').trim() : '';
   } catch (err) {
     return '';
@@ -233,7 +245,7 @@ function webNilaiFormInventory_(sheet, a1) {
 }
 
 function webMaster_(nama) {
-  const sh = SpreadsheetApp.openById(INVENTORY_SS_ID_).getSheetByName(nama); // INVENTORY_SS_ID_: GatewayTransaksi.js
+  const sh = webInventorySS_().getSheetByName(nama); // INVENTORY_SS_ID_: GatewayTransaksi.js
   if (!sh) throw new Error('Sheet "' + nama + '" tidak ada di inventory_SANFELO.');
   return sh;
 }
@@ -314,6 +326,7 @@ function webGateway_(action, payload) {
 }
 
 function webCatatLog_(admin, aksi, ket) {
+  WEB_LOG_DICATAT_ = true; // WEB_PERCEPAT.js: aksi ini sudah tercatat
   try { // di mode latihan masuk ke LOG_WEB file latihan
     const ss = webSS_();
     let sh = ss.getSheetByName(WEB_LOG_SHEET);
@@ -343,16 +356,49 @@ function webBukanLatihan_(apa) {
   if (WEB_LATIHAN_) throw new Error('Mode latihan: ' + apa + ' tidak bisa dicoba karena langsung mengubah spreadsheet inventory. Matikan mode latihan untuk menyimpan sungguhan.');
 }
 
-function webBacaLog_() {
+// a.admin = nama admin (kosong = semua), a.cari = teks; membaca 3000 baris terakhir, tampil maks 300
+function webBacaLog_(a) {
+  a = a || {};
   const sh = webSS_().getSheetByName(WEB_LOG_SHEET);
   if (!sh || sh.getLastRow() < 2) return [];
-  const n = Math.min(200, sh.getLastRow() - 1);
-  return sh.getRange(sh.getLastRow() - n + 1, 1, n, 4).getValues().reverse().map(function (r) {
-    return {
+  const filterAdmin = String(a.admin || '').trim().toUpperCase();
+  const cari = String(a.cari || '').trim().toUpperCase();
+  const n = Math.min(3000, sh.getLastRow() - 1);
+  const hasil = [];
+  const rows = sh.getRange(sh.getLastRow() - n + 1, 1, n, 4).getValues().reverse();
+  for (let i = 0; i < rows.length && hasil.length < 300; i++) {
+    const r = rows[i];
+    if (filterAdmin && String(r[1] || '').trim().toUpperCase() !== filterAdmin) continue;
+    if (cari && (String(r[2]) + ' ' + String(r[3])).toUpperCase().indexOf(cari) === -1) continue;
+    hasil.push({
       waktu: r[0] instanceof Date ? Utilities.formatDate(r[0], WEB_TZ, 'dd/MM/yyyy HH:mm') : String(r[0]),
       admin: r[1], aksi: r[2], ket: r[3]
-    };
-  });
+    });
+  }
+  return hasil;
+}
+
+// hanya ADMIN (pemilik) yang boleh membuat / mengganti PIN admin lain (mis. NUR, SILVA)
+function webAturPinAdmin_(a, admin) {
+  if (admin !== 'ADMIN') throw new Error('Hanya akun ADMIN yang boleh mengatur PIN admin.');
+  const nama = String(a.nama || '').trim().toUpperCase();
+  const pin = String(a.pinBaru || '').trim();
+  if (!/^[A-Z]{2,20}$/.test(nama) || nama === 'ADMIN') throw new Error('Nama admin hanya huruf (2-20), bukan ADMIN.');
+  if (!/^\d{4,8}$/.test(pin)) throw new Error('PIN harus 4-8 angka.');
+  const props = PropertiesService.getScriptProperties();
+  const baru = !props.getProperty(WEB_PREFIX_PIN + nama);
+  props.setProperty(WEB_PREFIX_PIN + nama, pin);
+  CacheService.getScriptCache().remove('WEBGAGAL_' + nama);
+  webCatatLog_(admin, baru ? 'TAMBAH ADMIN' : 'GANTI PIN ADMIN', nama);
+  return { nama: nama, baru: baru };
+}
+
+// nama admin yang terdaftar (untuk filter Aktivitas Admin)
+function webDaftarAdmin_() {
+  return PropertiesService.getScriptProperties().getKeys()
+    .filter(function (k) { return k.indexOf(WEB_PREFIX_PIN) === 0; })
+    .map(function (k) { return k.slice(WEB_PREFIX_PIN.length); })
+    .sort();
 }
 
 /* ---------------- riwayat pembayaran (format sama dengan inventory) ---------------- */

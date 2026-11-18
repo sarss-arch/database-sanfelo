@@ -5,7 +5,7 @@
    1. Buka spreadsheet database_SANFELO > Ekstensi > Apps Script.
    2. Tambahkan file skrip: WEB_APP.js, WEB_SETUP.js, WEB_PO_MASUK.js,
       WEB_SURAT_JALAN.js, WEB_POSTING_LAIN.js, WEB_KAS_LAPORAN.js,
-      WEB_CETAK.js, WEB_ALAT.js, WEB_INV_SALINAN.js dan file HTML: WebIndex, WebStyle,
+      WEB_CETAK.js, WEB_ALAT.js, WEB_PERCEPAT.js, WEB_KAS_CRUD.js, WEB_INV_SALINAN.js dan file HTML: WebIndex, WebStyle,
       WebScript, WebLogo. File lama JANGAN diubah.
    2b. Jalankan webSiapkanFileCetak (sekali; ulangi kalau template nota
       di inventory diubah). Izinkan akses Drive saat diminta.
@@ -19,6 +19,10 @@
    6. Tambah/ubah admin: Setelan proyek (ikon gerigi) > Properti skrip >
       tambah properti WEB_PIN_NAMAADMIN (huruf besar) = PIN-nya.
       Hapus properti itu untuk mencabut akses.
+   7. Admin NUR & SILVA: jalankan webTambahAdminNurSilva (PIN muncul di
+      Log), atau login sebagai ADMIN > Aktivitas Admin > Akun admin.
+   8. Sesudah mengganti kode: Terapkan > Kelola deployment > ✏️ Edit >
+      Versi: "Versi baru" > Terapkan (link web TIDAK berubah).
    ====================================================== */
 
 function webSiapkanAkses() {
@@ -51,4 +55,34 @@ function webGantiKunciAkses() {
   const kunci = Utilities.getUuid().replace(/-/g, '').slice(0, 20);
   PropertiesService.getScriptProperties().setProperty(WEB_PROP_KUNCI, kunci);
   Logger.log('KUNCI link BARU: ' + kunci);
+}
+
+/* ---------------- admin NUR & SILVA ----------------
+   Jalankan SEKALI dari editor: pilih webTambahAdminNurSilva > Jalankan,
+   lalu lihat Log eksekusi untuk PIN masing-masing. Admin ADMIN tetap ada
+   (dipakai pemilik). Semua simpan/ubah/hapus di web tercatat di sheet
+   LOG_WEB dengan nama admin yang login, dan bisa difilter di menu
+   "Aktivitas Admin". PIN yang sudah ada TIDAK diganti. */
+function webTambahAdminNurSilva() {
+  const props = PropertiesService.getScriptProperties();
+  ['NUR', 'SILVA'].forEach(function (nama) {
+    const k = WEB_PREFIX_PIN + nama;
+    if (props.getProperty(k)) {
+      Logger.log('Admin ' + nama + ' sudah ada (PIN tidak diubah). Lupa PIN? jalankan webResetPin' + (nama === 'NUR' ? 'Nur' : 'Silva') + '.');
+      return;
+    }
+    const pin = String(Math.floor(100000 + Math.random() * 900000));
+    props.setProperty(k, pin);
+    Logger.log('Admin baru: nama ' + nama + ', PIN ' + pin);
+  });
+  webDaftarAdmin();
+}
+
+// buat PIN baru (PIN lama langsung tidak berlaku)
+function webResetPinNur() { webResetPin_('NUR'); }
+function webResetPinSilva() { webResetPin_('SILVA'); }
+function webResetPin_(nama) {
+  const pin = String(Math.floor(100000 + Math.random() * 900000));
+  PropertiesService.getScriptProperties().setProperty(WEB_PREFIX_PIN + nama, pin);
+  Logger.log('PIN baru ' + nama + ': ' + pin);
 }
