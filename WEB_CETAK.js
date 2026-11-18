@@ -91,6 +91,23 @@ function webSamakanZonaCetak_(ss) {
   } catch (err) { Logger.log('Zona waktu file cetak tidak bisa diatur: ' + err); }
 }
 
+// baris terakhir nota: anchor + tambah, DIPERPANJANG sampai baris terakhir yang masih ada tulisannya
+// (mis. "HARAP DITULIS", "Keterangan:", "PEMBAYARAN KAMI ANGGAP LUNAS ...", rekening) -- sama dengan
+// yang tercetak dari sheet inventory. Hanya melihat sampai 12 baris di bawah anchor.
+function webBarisAkhirNota_(kode, sh, teks, mulai, tambah, cadangan, kolom) {
+  const r = kode.cariBarisAnchor_(sh, teks, mulai);
+  if (r === -1) return cadangan;
+  const sampai = Math.min(sh.getLastRow(), r + 12);
+  let akhir = r + tambah;
+  if (sampai >= r) {
+    const v = sh.getRange(r, 1, sampai - r + 1, kolom).getDisplayValues();
+    for (let i = v.length - 1; i >= 0; i--) {
+      if (v[i].some(function (x) { return String(x).trim() !== ''; })) { akhir = Math.max(akhir, r + i); break; }
+    }
+  }
+  return akhir;
+}
+
 function webBarisAkhirAnchor_(inv, sh, teks, mulai, tambah, cadangan) {
   const r = inv.cariBarisAnchor_(sh, teks, mulai);
   return r === -1 ? cadangan : r + tambah;
@@ -151,7 +168,7 @@ function webCetakSJInvoice_(inv, ss, jenis, nomor, a) {
   if (tglTempo) iv.getRange('H8').setValue(tglTempo).setNumberFormat('dd/mm/yyyy');
   SpreadsheetApp.flush();
   if (jenis === 'SJ') {
-    const akhir = webBarisAkhirAnchor_(inv, sj, 'Yang Menyerahkan,', 9, 3, 20);
+    const akhir = webBarisAkhirNota_(inv, sj, 'Yang Menyerahkan,', 9, 3, 20, 8);
     const r = webEksporPdf_(ss, sj, akhir, 8, noSJ + ' - ' + trx[4], 'SJ');
     return r;
   }
@@ -160,7 +177,7 @@ function webCetakSJInvoice_(inv, ss, jenis, nomor, a) {
   if (a.tandaiCetak && !WEB_LATIHAN_) {
     tercetak = inv.konfirmasiSiapCetak({ sheetName: 'INVOICE', noInv: String(trx[2]).trim(), mode: 'cetak', alasan: String(a.alasan || '') }).pesan;
   }
-  const akhir = webBarisAkhirAnchor_(inv, iv, 'Accounting,', 11, 4, 24);
+  const akhir = webBarisAkhirNota_(inv, iv, 'Accounting,', 11, 4, 27, 9);
   const r = webEksporPdf_(ss, iv, akhir, 9, String(trx[2]).trim() + ' - ' + trx[4], 'INVOICE');
   r.tercetak = tercetak;
   return r;
@@ -185,7 +202,7 @@ function webCetakSparepart_(inv, ss, jenis, nomor, a) {
   if (jenis === 'INV_SPR' && a.tandaiCetak && !WEB_LATIHAN_) {
     tercetak = inv.konfirmasiSiapCetak({ sheetName: 'INV_SPR', noInv: String(spr[1]).trim(), mode: 'cetak', alasan: String(a.alasan || '') }).pesan;
   }
-  const akhir = jenis === 'SJ_SPR' ? webBarisAkhirAnchor_(inv, sh, 'Yang Menyerahkan,', 9, 3, 20) : Math.max(sh.getLastRow(), 27);
+  const akhir = jenis === 'SJ_SPR' ? webBarisAkhirNota_(inv, sh, 'Yang Menyerahkan,', 9, 3, 20, 8) : webBarisAkhirNota_(inv, sh, 'Accounting,', 11, 8, Math.max(sh.getLastRow(), 27), 9);
   const r = webEksporPdf_(ss, sh, akhir, jenis === 'SJ_SPR' ? 8 : 9, String(jenis === 'SJ_SPR' ? spr[0] : spr[1]).trim(), 'LAIN');
   r.tercetak = tercetak;
   return r;
