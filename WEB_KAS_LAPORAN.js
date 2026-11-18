@@ -5,7 +5,7 @@
    - Stok Barang  : fungsi popup Stok Barang inventory (ambilDataStokBarang).
    - Petty Cash   : fungsi popup Petty Cash inventory (processTransactionBatch),
                     yang memang menulis langsung ke PETTY CASH di database.
-   - Buku Bank    : baris baru ditambahkan di bawah BUKU BANK database dengan
+   - Buku Bank    : (sheet BUKU BANK di inventory_SANFELO) baris baru ditambahkan di bawah dengan
                     rumus SALDO yang sama dengan baris di atasnya.
    - Laporan      : hitungan yang sama dengan tab LAPORAN INVOICE inventory
                     (LOG_INVOICE_CETAK + PO pending dari HISTORY_PO_MASUK).
@@ -25,10 +25,13 @@ const WEB_KAS_KATEGORI_ = {
     ['HUTANG_USAHA', 'Hutang usaha', 'KREDIT'], ['OPERASIONAL', 'Operasional', 'KREDIT'], ['ADMIN', 'Admin', 'KREDIT']]
 };
 const WEB_KAS_MULAI_ = { 'PETTY CASH': 4, 'BUKU BANK': 3 };
+// BUKU BANK yang dipakai admin sehari-hari ada di inventory_SANFELO (sheet lokal, bukan IMPORTRANGE).
+// BUKU BANK di database_SANFELO hanya salinan lama (berhenti 14/09/2026), jadi web membaca & menulis ke inventory.
+const WEB_KAS_DI_INVENTORY_ = ['BUKU BANK'];
 
 function webDaftarKas_(a) {
   const nama = a.sheet === 'BUKU BANK' ? 'BUKU BANK' : 'PETTY CASH';
-  const sh = webSS_().getSheetByName(nama);
+  const sh = webKasSheetData_(nama, false);
   const mulai = WEB_KAS_MULAI_[nama];
   const last = sh.getLastRow();
   const kat = WEB_KAS_KATEGORI_[nama];
@@ -84,7 +87,7 @@ function webSimpanBukuBank_(a, admin) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(20000)) throw new Error('Database sedang sibuk, coba lagi sebentar.');
   try {
-    const sh = webSS_().getSheetByName('BUKU BANK');
+    const sh = webKasSheetData_('BUKU BANK', true);
     const mulai = WEB_KAS_MULAI_['BUKU BANK'];
     // baris terakhir yang berisi tanggal/keterangan (kolom H berisi rumus sampai bawah)
     const last = sh.getLastRow();
