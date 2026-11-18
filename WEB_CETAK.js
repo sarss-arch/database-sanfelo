@@ -70,6 +70,13 @@ function webEksporPdf_(ss, sh, barisAkhir, kolomAkhir, namaFile, jenis, margin) 
   return { nama: nama, pdf: Utilities.base64Encode(resp.getBlob().getBytes()) };
 }
 
+// Date -> Date yang tampil dengan tanggal WIB yang sama di spreadsheet ss (zona waktunya bisa beda)
+function webTglUntukSheet_(ss, v) {
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) v = new Date(v);
+  if (!(v instanceof Date) || isNaN(v.getTime())) return null;
+  return Utilities.parseDate(Utilities.formatDate(v, WEB_TZ, 'yyyy-MM-dd'), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd');
+}
+
 function webBarisAkhirAnchor_(inv, sh, teks, mulai, tambah, cadangan) {
   const r = inv.cariBarisAnchor_(sh, teks, mulai);
   return r === -1 ? cadangan : r + tambah;
@@ -118,7 +125,15 @@ function webCetakSJInvoice_(inv, ss, jenis, nomor, a) {
   sj.getRange('H6').setValue(noSJ);
   sj.getRange('H3').clearContent(); // exportSJPDF juga mengosongkan No PO sebelum export
   iv.getRange('H9').setValue(trx[16] || '');
-  if (trx[6] instanceof Date) iv.getRange('H8').setValue(trx[6]).setNumberFormat('dd/mm/yyyy');
+  // tanggal nota = tanggal TRANSAKSI menurut jam WIB, apa pun zona waktu file cetak
+  // (tanpa ini tanggal bisa mundur 1 hari kalau zona waktu file cetak bukan Asia/Jakarta)
+  const tglTrx = webTglUntukSheet_(ss, trx[3]);
+  if (tglTrx) {
+    sj.getRange('H5').setValue(tglTrx).setNumberFormat('dd/mm/yyyy');
+    iv.getRange('H7').setValue(tglTrx).setNumberFormat('dd/mm/yyyy');
+  }
+  const tglTempo = webTglUntukSheet_(ss, trx[6]);
+  if (tglTempo) iv.getRange('H8').setValue(tglTempo).setNumberFormat('dd/mm/yyyy');
   SpreadsheetApp.flush();
   if (jenis === 'SJ') {
     const akhir = webBarisAkhirAnchor_(inv, sj, 'Yang Menyerahkan,', 9, 3, 20);
