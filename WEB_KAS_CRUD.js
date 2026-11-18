@@ -25,6 +25,15 @@ const WEB_KAS_LEBAR_ = { 'PETTY CASH': 9, 'BUKU BANK': 8 }; // A..I (I = catatan
 const WEB_KAS_FORMAT_TGL_ = 'dd/mm/yyyy';
 const WEB_KAS_RUMUS_SALDO_ = /^=\s*(H\d+\s*\+\s*)?C\d+\s*\+\s*D\d+\s*-\s*E\d+\s*-\s*F\d+\s*-\s*G\d+\s*$/i;
 
+// sheet kas yang benar-benar dipakai admin. SANFELO: BUKU BANK diisi di inventory_SANFELO
+// (salinan BUKU BANK di database_SANFELO sudah lama tidak dipakai) -> lihat WEB_KAS_DI_INVENTORY_
+function webKasSheetData_(nama, tulis) {
+  const diInventory = typeof WEB_KAS_DI_INVENTORY_ !== 'undefined' && WEB_KAS_DI_INVENTORY_.indexOf(nama) !== -1;
+  if (!diInventory) return webSS_().getSheetByName(nama);
+  if (tulis) webBukanLatihan_('mengubah ' + nama + ' (sheet ini ada di spreadsheet inventory, bukan di file latihan)');
+  return webInventorySS_().getSheetByName(nama);
+}
+
 function webKasNama_(a) {
   const nama = String(a.sheet || '').trim().toUpperCase();
   if (!WEB_KAS_KATEGORI_[nama]) throw new Error('Sheet kas "' + nama + '" tidak tersedia di web ini.');
@@ -113,7 +122,7 @@ function webKasUbahAtauHapus_(a, admin, hapus) {
   let hasil;
   let teksLama = '';
   try {
-    const sh = webSS_().getSheetByName(nama);
+    const sh = webKasSheetData_(nama, true);
     if (!sh) throw new Error('Sheet "' + nama + '" tidak ada di database.');
     const data = webKasBaca_(sh, nama);
     const idx = webKasCekAsal_(data, kat, a.no, a.asal);
