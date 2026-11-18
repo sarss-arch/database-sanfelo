@@ -74,7 +74,21 @@ function webEksporPdf_(ss, sh, barisAkhir, kolomAkhir, namaFile, jenis, margin) 
 function webTglUntukSheet_(ss, v) {
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) v = new Date(v);
   if (!(v instanceof Date) || isNaN(v.getTime())) return null;
-  return Utilities.parseDate(Utilities.formatDate(v, WEB_TZ, 'yyyy-MM-dd'), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd');
+  let tz = '';
+  try { tz = String(ss.getSpreadsheetTimeZone() || ''); } catch (err) { tz = ''; }
+  if (!tz || tz === 'null' || tz === 'undefined') tz = WEB_TZ; // zona waktu file tidak terbaca: anggap WIB
+  try {
+    return Utilities.parseDate(Utilities.formatDate(v, WEB_TZ, 'yyyy-MM-dd'), tz, 'yyyy-MM-dd');
+  } catch (err) {
+    return null; // jangan sampai cetak gagal karena ini: tanggal dari fungsi inventory dipakai apa adanya
+  }
+}
+
+// file cetak (salinan pribadi) disamakan ke WIB supaya tanggal yang ditulis kode tidak bergeser 1 hari
+function webSamakanZonaCetak_(ss) {
+  try {
+    if (String(ss.getSpreadsheetTimeZone() || '') !== WEB_TZ) ss.setSpreadsheetTimeZone(WEB_TZ);
+  } catch (err) { Logger.log('Zona waktu file cetak tidak bisa diatur: ' + err); }
 }
 
 function webBarisAkhirAnchor_(inv, sh, teks, mulai, tambah, cadangan) {
@@ -98,6 +112,7 @@ function webCetak_(a, admin) {
   let hasil;
   WEB_CETAK_SS_ = ss;
   try {
+    webSamakanZonaCetak_(ss);
     webSegarkanMasterCetak_(ss);
     if (jenis === 'SJ' || jenis === 'INVOICE') hasil = webCetakSJInvoice_(inv, ss, jenis, nomor, a);
     else if (jenis === 'SJ_SPR' || jenis === 'INV_SPR') hasil = webCetakSparepart_(inv, ss, jenis, nomor, a);
