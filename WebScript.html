@@ -555,6 +555,7 @@
     const no = $('cariInvoice').value.trim().toUpperCase();
     if (!no) return;
     api('detailInvoice', { noInvoice: no }, 'Membuka invoice…').then(function (d) {
+      S.invoiceTampil = d;
       const subtotal = d.items.reduce(function (s, i) { return s + i.harga; }, 0);
       const diskon = d.items.reduce(function (s, i) { return s + i.diskon; }, 0);
       const p = d.pembayaran;
@@ -569,7 +570,7 @@
         '<div class="ringkas" style="margin-top:10px"><div class="pil">Status order ' + lencanaStatus(d.statusOrder) + '</div>' +
         (p ? '<div class="pil">Pembayaran ' + lencanaStatus(p.status === 'Lunas' ? 'LUNAS' : (p.totalSudahDibayar > 0 ? 'CICIL' : 'BELUM BAYAR')) + ' sisa <b>' + rp(p.sisaTagihan) + '</b></div>' : '<div class="pil">Belum ada di PENJUALAN</div>') +
         (d.cetak ? '<div class="pil">Cetak ' + lencanaStatus(d.cetak.status) + ' ' + esc(d.cetak.jumlah) + 'x</div>' : '') + '</div>' +
-        '<div class="aksi-bawah tanpa-cetak">' + (p && p.status !== 'Lunas' ? '<button class="tombol utama" data-inv-bayar="' + esc(d.noInv) + '">Catat pembayaran</button>' : '') + tombolCetak('SJ', d.noSJ, 'Cetak Surat Jalan (PDF)') + tombolCetak('INVOICE', d.noInv, 'Cetak Invoice (PDF)', true) + '</div></div>';
+        '<div class="aksi-bawah tanpa-cetak"><button class="tombol" type="button" data-ganti-cust="1">👤 Ganti customer</button>' + (p && p.status !== 'Lunas' ? '<button class="tombol utama" data-inv-bayar="' + esc(d.noInv) + '">Catat pembayaran</button>' : '') + tombolCetak('SJ', d.noSJ, 'Cetak Surat Jalan (PDF)') + tombolCetak('INVOICE', d.noInv, 'Cetak Invoice (PDF)', true) + '</div></div>';
     }).catch(function (err) { $('areaInvoice').innerHTML = '<div class="kartu"><div class="kosong">' + esc(err.message) + '</div></div>'; });
   }
 
@@ -627,13 +628,16 @@
               const teks = esc(v === true ? '✓' : v === false ? '' : v);
               return String(v || '').length > 35 ? '<span class="panjang">' + teks + '</span>' : teks;
             }));
-          if (d.sheet === 'DISKON') sel.push(b.v[0] ? '<button class="tombol kecil" type="button" data-hapus-cust="' + b.no + '" data-nama="' + esc(b.v[0]) + '">🗑️ Hapus</button>' : '');
+          if (d.sheet === 'DISKON') sel.push(b.v[0] ? '<span style="white-space:nowrap"><button class="tombol kecil" type="button" data-ubah-cust="' + b.no + '" data-v="' + esc(JSON.stringify(b.v.slice(0, 7))) + '">✏️ Ubah</button> <button class="tombol kecil" type="button" data-hapus-cust="' + b.no + '" data-nama="' + esc(b.v[0]) + '">🗑️ Hapus</button></span>' : '');
           return { attr: /^(INV|SPRIN)-/.test(noInv) && d.sheet !== 'EKSPEDISI' ? 'data-inv="' + esc(noInv) + '"' : '', sel: sel };
         }), uangIdx);
       const jmlHal = Math.max(1, Math.ceil(d.total / d.per));
       $('halamanData').innerHTML = '<button class="tombol kecil" id="dPrev"' + (d.halaman <= 1 ? ' disabled' : '') + '>‹ Sebelumnya</button><span>Halaman ' + d.halaman + ' / ' + jmlHal + '</span><button class="tombol kecil" id="dNext"' + (d.halaman >= jmlHal ? ' disabled' : '') + '>Berikutnya ›</button>';
       if ($('ringTempo')) muatRingkasanTempo();
       if ($('dataTambahCustomer')) $('dataTambahCustomer').onclick = function () { bukaFormCustomer(function () { muatData(); }); };
+      $('tabelData').querySelectorAll('[data-ubah-cust]').forEach(function (btn) {
+        btn.onclick = function (e) { e.stopPropagation(); bukaUbahCustomer(Number(btn.dataset.ubahCust), JSON.parse(btn.dataset.v)); };
+      });
       $('tabelData').querySelectorAll('[data-hapus-cust]').forEach(function (btn) {
         btn.onclick = function (e) {
           e.stopPropagation();
@@ -652,6 +656,80 @@
       $('dNext').onclick = function () { S.data.halaman++; muatData(); };
     }).catch(gagal);
   }
+
+  /* ---------- ubah customer (DISKON) ---------- */
+  function tabelRincian(list) {
+    return list.length ? tabel(['Sheet', 'Sel nama', 'Sel alamat'], list.map(function (x) { return { sel: [esc(x.sheet), x.nama || 0, x.alamat || 0] }; }), [1, 2]) : '<div class="redup">Tidak ada data lama yang perlu diganti.</div>';
+  }
+  function bukaUbahCustomer(baris, v) {
+    // v = [NAMA TOKO, WILAYAH, DISKON, TOTAL, METODE BAYAR, ALAMAT, NO TELP]
+    bukaModal('✏️ Ubah customer ' + v[0], '<div class="form-grid">' +
+      '<label class="penuh">Nama toko<input id="ucNama" value="' + esc(v[0]) + '"></label>' +
+      '<label>Wilayah<input id="ucWilayah" value="' + esc(v[1]) + '"></label>' +
+      '<label>Diskon (mis. 35+5+5)<input id="ucDiskon" value="' + esc(v[2]) + '"></label>' +
+      '<label>Metode bayar<input id="ucMetode" value="' + esc(v[4]) + '"></label>' +
+      '<label>No telp<input id="ucTelp" inputmode="tel" value="' + esc(v[6]) + '"></label>' +
+      '<label class="penuh">Alamat<textarea id="ucAlamat" rows="2">' + esc(v[5]) + '</textarea></label></div>' +
+      '<label id="ucSemuaBungkus" class="tersembunyi" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="ucSemua" checked style="width:auto"> Ganti juga nama ini di SEMUA data lama (PO, transaksi, piutang, tempo, log cetak, sparepart, PO keluar)</label>' +
+      '<div id="ucPesan"></div><div class="aksi-bawah"><button class="tombol" id="ucBatal" type="button">Batal</button><button class="tombol utama" id="ucSimpan" type="button">Lanjut</button></div>');
+    const lama = String(v[0]).trim().toUpperCase();
+    $('ucNama').oninput = function () { $('ucSemuaBungkus').classList.toggle('tersembunyi', this.value.trim().toUpperCase() === lama); };
+    $('ucBatal').onclick = tutupModal;
+    $('ucSimpan').onclick = function () {
+      const arg = { baris: baris, nama: v[0], gantiSemua: $('ucSemua').checked,
+        baru: { nama: $('ucNama').value, wilayah: $('ucWilayah').value, diskon: $('ucDiskon').value, metode: $('ucMetode').value, alamat: $('ucAlamat').value, telp: $('ucTelp').value } };
+      api('ubahCustomer', arg, 'Memeriksa…').then(function (info) {
+        konfirmasi('Simpan perubahan customer', '<p><b>' + esc(info.lama) + '</b>' + (info.gantiNama ? ' → <b>' + esc(info.baru) + '</b>' : '') + '</p>' +
+          (info.gantiSemua ? '<p>Nama akan diganti di data lama berikut:</p>' + tabelRincian(info.rincian) :
+            (info.gantiNama ? '<div class="peringatan">Hanya DISKON yang diubah. Transaksi lama tetap memakai nama lama.</div>' : '<p>Hanya data di DISKON yang diubah.</p>')), 'Ya, simpan').then(function (ya) {
+          if (!ya) return;
+          api('ubahCustomer', Object.assign({ yakin: true }, arg), 'Menyimpan customer…').then(function (h) {
+            toast('Customer ' + h.nama + ' disimpan' + (h.catatan.length ? ' · ' + h.catatan.join(' ') : ''));
+            PO.master = null; muatData();
+          }).catch(gagal);
+        });
+      }).catch(function (err) { $('ucPesan').innerHTML = '<div class="gagal">' + esc(err.message) + '</div>'; });
+    };
+  }
+
+  /* ---------- ganti customer satu invoice ---------- */
+  function bukaGantiCustomerInvoice(d) {
+    if (!PO.master) { api('masterPO', {}, 'Memuat daftar customer…').then(function (m) { PO.master = m; bukaGantiCustomerInvoice(d); }).catch(gagal); return; }
+    const cust = PO.master.customer;
+    bukaModal('👤 Ganti customer ' + d.noInv, '<p>Sekarang: <b>' + esc(d.customer) + '</b><br><span class="redup">' + esc(d.alamat || '') + '</span></p>' +
+      '<div class="form-grid"><label class="penuh">Customer baru (harus ada di DISKON)<input id="gcNama" list="dlGcCust" autocomplete="off"></label><datalist id="dlGcCust">' +
+      cust.map(function (c) { return '<option value="' + esc(c.nama) + '">' + esc(c.wilayah) + '</option>'; }).join('') + '</datalist>' +
+      '<label class="penuh">Alamat di invoice<textarea id="gcAlamat" rows="2">' + esc(d.alamat || '') + '</textarea></label></div>' +
+      '<p class="redup">Customer belum ada? Tambahkan dulu di Data › DISKON › ＋ Customer baru. Nominal, tanggal & pembayaran tidak berubah.</p>' +
+      '<div id="gcPesan"></div><div class="aksi-bawah"><button class="tombol" id="gcBatal" type="button">Batal</button><button class="tombol utama" id="gcLanjut" type="button">Lanjut</button></div>');
+    $('gcNama').onchange = function () {
+      const c = cust.filter(function (x) { return x.nama.trim().toUpperCase() === $('gcNama').value.trim().toUpperCase(); })[0];
+      if (c && c.alamat) $('gcAlamat').value = c.alamat;
+    };
+    $('gcBatal').onclick = tutupModal;
+    $('gcLanjut').onclick = function () {
+      const arg = { noInv: d.noInv, customer: $('gcNama').value, alamat: $('gcAlamat').value };
+      api('gantiCustomerInvoice', arg, 'Memeriksa semua sheet…').then(function (info) {
+        konfirmasi('Ganti customer ' + info.noInv, '<p><b>' + esc(info.lama.join(' / ')) + '</b> → <b>' + esc(info.baru) + '</b>' + (info.alamat ? '<br><span class="redup">' + esc(info.alamat) + '</span>' : '') + '</p>' +
+          tabelRincian(info.rincian) +
+          (info.poDiganti.length ? '<p>PO ikut diganti: ' + esc(info.poDiganti.join(', ')) + '</p>' : '') +
+          (info.poDilewati.length ? '<div class="peringatan">PO tidak diubah: ' + esc(info.poDilewati.join(', ')) + '</div>' : '') +
+          '<div class="peringatan">Sesudah ini TEMPO TOKO disinkron ulang (status LOCKED/UNLOCKED dihitung lagi per toko).</div>', 'Ya, ganti').then(function (ya) {
+          if (!ya) return;
+          api('gantiCustomerInvoice', Object.assign({ yakin: true }, arg), 'Mengganti customer…').then(function (h) {
+            bukaModal('✅ Customer diganti', '<div class="sukses">' + esc(h.noInv) + ' sekarang atas nama <b>' + esc(h.customer) + '</b> (' + h.sel + ' sel di ' + esc(h.rincian.join(', ')) + ').</div>' +
+              (h.catatan.length ? '<div class="peringatan">' + esc(h.catatan.join(' · ')) + '</div>' : '') +
+              '<div class="aksi-bawah">' + tombolCetak('INVOICE', h.noInv, 'Cetak ulang invoice') + '<button class="tombol utama" id="gcOk" type="button">OK</button></div>');
+            $('gcOk').onclick = function () { tutupModal(); muatInvoice(); };
+          }).catch(gagal);
+        });
+      }).catch(function (err) { $('gcPesan').innerHTML = '<div class="gagal">' + esc(err.message) + '</div>'; });
+    };
+  }
+  document.addEventListener('click', function (e) {
+    const t = e.target.closest('[data-ganti-cust]'); if (!t || !S.invoiceTampil) return;
+    bukaGantiCustomerInvoice(S.invoiceTampil);
+  });
 
   /* ---------- aktivitas ---------- */
   function muatLog() {

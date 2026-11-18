@@ -124,7 +124,7 @@ function webJalankanAksi_(aksi, fn, args, admin) {
   try {
     const hasil = fn(args, admin);
     // jejak admin: aksi tulis yang belum mencatat sendiri tetap masuk LOG_WEB
-    if (tulis && !WEB_LOG_DICATAT_ && !(aksi === 'hapusCustomer' && !args.yakin)) webCatatLog_(admin, String(aksi).toUpperCase(), webRingkasArgs_(args));
+    if (tulis && !WEB_LOG_DICATAT_ && !(['hapusCustomer', 'ubahCustomer', 'gantiCustomerInvoice'].indexOf(aksi) !== -1 && !args.yakin)) webCatatLog_(admin, String(aksi).toUpperCase(), webRingkasArgs_(args));
     return hasil;
   } finally {
     // tetap dinaikkan walau gagal di tengah jalan: bisa saja sebagian sudah tertulis

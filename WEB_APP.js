@@ -127,6 +127,8 @@ const WEB_API_ = {
   masterPO: function () { return webMasterPO_(); },
   tambahCustomer: function (a, admin) { return webTambahCustomer_(a, admin); },
   hapusCustomer: function (a, admin) { return webHapusCustomer_(a, admin); },
+  ubahCustomer: function (a, admin) { return webUbahCustomer_(a, admin); }, // WEB_CUSTOMER.js
+  gantiCustomerInvoice: function (a, admin) { return webGantiCustomerInvoice_(a, admin); },
   hitungPO: function (a) { return webHitungPO_(a); },
   simpanPO: function (a, admin) { return webSimpanPOMasuk_(a, admin); },
   // WEB_SURAT_JALAN.js
