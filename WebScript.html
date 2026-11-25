@@ -190,6 +190,10 @@
     $('layarLogin').classList.add('tersembunyi');
     $('aplikasi').classList.remove('tersembunyi');
     $('namaAdmin').textContent = S.nama; $('sapaAdmin').textContent = S.nama;
+    // Mode latihan hanya untuk akun ADMIN
+    const admin = S.nama === 'ADMIN';
+    $('chipLatihan').style.display = admin ? '' : 'none';
+    if (!admin && S.latihan) setLatihan(false);
     $('tglHariIni').textContent = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
     segarkanTanggal();
     pergi('dashboard');
@@ -201,7 +205,6 @@
     $('loginPin').value = '';
     if (diam) $('loginPesan').textContent = 'Sesi habis, silakan masuk lagi.';
   }
-  $('tombolKeluar').onclick = function () { keluar(false); };
   // 🔄 Segarkan: ambil ulang data terbaru dari spreadsheet (mis. sesudah ada yang diedit langsung di sheet)
   if ($('tombolSegarkan')) $('tombolSegarkan').onclick = function () {
     kosongkanCache(); S.segarSampai = Date.now() + 20000;
