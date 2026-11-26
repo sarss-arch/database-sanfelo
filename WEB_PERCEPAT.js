@@ -36,7 +36,7 @@ const WEB_AKSI_BACA_SAJA_ = {
   pratinjauSJ: 1, masterTT: 1, muatPOKeluarTT: 1, hitungTT: 1, invoiceUntukBiaya: 1, daftarPalet: 1,
   detailPalet: 1, pratinjauSparepart: 1, stok: 1, daftarKas: 1, laporan: 1, tempoTokoDaftar: 1,
   susulanKandidat: 1, statusSJ: 1, groupingDaftar: 1, poKeluarMuat: 1, poKeluarDariPOMasuk: 1,
-  bukaSJ: 1, bukaTT: 1, bukaSpr: 1, siapkanLatihan: 1, daftarAdmin: 1
+  bukaSJ: 1, bukaTT: 1, bukaSpr: 1, siapkanLatihan: 1, daftarAdmin: 1, cekHutang: 1, versiData: 1
 };
 
 const WEB_CACHE_POTONG_ = 90000; // batas 1 nilai CacheService = 100 KB
@@ -130,6 +130,28 @@ function webJalankanAksi_(aksi, fn, args, admin) {
     // tetap dinaikkan walau gagal di tengah jalan: bisa saja sebagian sudah tertulis
     if (tulis && !WEB_LATIHAN_) webCacheNaikkanVersi_();
   }
+}
+
+/**
+ * Cek ringan untuk web (dipanggil tiap ±45 detik dari browser yang sedang terbuka).
+ * Mengembalikan "versi data". Versi naik bila:
+ *  - ada aksi tulis dari web / gateway (webCacheNaikkanVersi_), atau
+ *  - jumlah baris salah satu sheet di database berubah (mis. baris baru dari popup spreadsheet).
+ * Hanya membaca jumlah baris tiap sheet, tidak membaca isi dan tidak menulis apa pun ke sheet.
+ */
+function webVersiData_() {
+  const c = CacheService.getScriptCache();
+  try {
+    const sidik = webSS_().getSheets().map(function (sh) { return sh.getLastRow(); }).join('.');
+    const lama = c.get('WEBC_SIDIK');
+    if (lama !== sidik) {
+      if (lama) webCacheNaikkanVersi_(); // ada baris baru/terhapus -> simpanan server dibuang juga
+      c.put('WEBC_SIDIK', sidik, 21600);
+    }
+  } catch (err) {
+    Logger.log('versiData: ' + err);
+  }
+  return { v: webCacheVersi_() };
 }
 
 // ringkasan isian untuk LOG_WEB (tanpa password / PIN)
