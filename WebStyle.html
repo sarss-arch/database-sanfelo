@@ -134,9 +134,12 @@
   .modal { background: #fff; border-radius: 20px; width: 100%; max-width: 640px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
   .modal-kepala { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--garis); }
   .modal-isi { padding: 16px 20px 20px; overflow-y: auto; }
-  .memuat { position: fixed; inset: 0; background: rgba(243,247,245,.6); display: grid; place-items: center; z-index: 60; backdrop-filter: blur(2px); }
-  .memuat > * { grid-area: 1 / 1; }
-  .memuat span { margin-top: 70px; font-weight: 700; color: var(--redup); }
+  /* penanda memuat: pil kecil di pojok kanan bawah, tidak menutup layar (halaman tetap bisa diklik) */
+  .memuat { position: fixed; right: 20px; bottom: 20px; z-index: 60; display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--garis); border-radius: 999px; padding: 8px 16px 8px 10px; box-shadow: 0 6px 20px rgba(20,40,30,.12); pointer-events: none; max-width: calc(100vw - 32px); }
+  .memuat .putar { width: 18px; height: 18px; border-width: 3px; flex: none; }
+  .memuat span { font-weight: 700; font-size: 13px; color: var(--redup); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* halaman yang sedang menyimpan: dikunci sebentar (menu lain tetap bisa dibuka) */
+  .hal.sibuk { opacity: .6; pointer-events: none; }
   .putar { width: 36px; height: 36px; border-radius: 50%; border: 4px solid var(--hijau-muda); border-top-color: var(--hijau); animation: putar 0.8s linear infinite; }
   @keyframes putar { to { transform: rotate(360deg); } }
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--gelap); color: #fff; padding: 12px 18px; border-radius: 14px; font-weight: 600; transition: transform .25s; z-index: 70; max-width: 90vw; }

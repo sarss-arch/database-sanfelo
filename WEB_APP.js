@@ -119,6 +119,8 @@ const WEB_API_ = {
   detailInvoice: function (a) { return webDetailInvoice_(a.noInvoice); },
   logWeb: function (a) { return webBacaLog_(a); },
   daftarAdmin: function () { return webDaftarAdmin_(); },
+  versiData: function () { return webVersiData_(); },
+  cekHutang: function () { return { tanpaBulan: [], yatim: [], sisaAneh: [] }; }, // pemeriksaan HUTANG baru ada di web SL
   aturPinAdmin: function (a, admin) { return webAturPinAdmin_(a, admin); },
   // WEB_KAS_CRUD.js: ubah / hapus baris petty cash & buku bank
   ubahKas: function (a, admin) { return webUbahKas_(a, admin); },
