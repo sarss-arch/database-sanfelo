@@ -114,7 +114,28 @@ function webMuatPOuntukSJ_(a) {
   });
   if (!items.length) throw new Error('Tidak ada barang yang bisa dimuat. ' + gagal.join(', '));
   const tokoBeda = items.filter(function (it) { return it.customer !== String(header.toko || '').trim(); });
-  return { header: header, items: items, gagal: gagal, tokoBeda: tokoBeda.length > 0, nomor: webNomorSJBerikut_() };
+  return { header: header, items: items, gagal: gagal, tokoBeda: tokoBeda.length > 0, nomor: webNomorSJBerikut_(), satDefault: webSatDefaultSJ_(items) };
+}
+
+/* ---------------- SAT otomatis ---------------- */
+const WEB_SAT_DEFAULT_ = 'SET'; // satuan yang dipakai hampir semua barang SJ / invoice
+
+// SAT per kode barang untuk form SJ web: SAT terakhir yang pernah dipakai kode itu di
+// DETAIL_TRANSAKSI (kolom I); kalau barang belum pernah dikirim -> SET.
+function webSatDefaultSJ_(items) {
+  const butuh = {};
+  (items || []).forEach(function (it) { const k = String(it.kode || '').trim().toUpperCase(); if (k) butuh[k] = true; });
+  const hasil = {};
+  try {
+    webBaca_('DETAIL_TRANSAKSI', 9).forEach(function (r) {
+      const k = String(r[5] || '').trim().toUpperCase(), sat = String(r[8] || '').trim().toUpperCase();
+      if (butuh[k] && sat) hasil[k] = sat; // baris paling bawah (terbaru) yang menang
+    });
+  } catch (err) {
+    Logger.log('SAT default: ' + err);
+  }
+  Object.keys(butuh).forEach(function (k) { if (!hasil[k]) hasil[k] = WEB_SAT_DEFAULT_; });
+  return hasil;
 }
 
 // nomor SJ / INV berikutnya: sama dengan transaksiBaru (dari TRANSAKSI di database, per bulan berjalan)

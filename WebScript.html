@@ -1180,6 +1180,12 @@
             habis ? '<span class="redup">sudah terkirim</span>' : '<input class="sjQty" data-i="' + i + '" inputmode="numeric" value="' + (it.qty > 0 ? it.qty : it.sisaQty) + '" style="width:80px;text-align:right">'] };
         }), [6, 7]);
       SJ.satKet = satKet || {};
+      // SAT otomatis (seperti di inventory): SAT terakhir kode itu, kalau belum pernah -> SET. SJ lama yang dibuka tetap memakai SAT-nya.
+      m.items.forEach(function (it) {
+        const k = String(it.kode || '').trim().toUpperCase(); if (!k) return;
+        const sk = SJ.satKet[it.kode] = SJ.satKet[it.kode] || {};
+        if (!sk.sat) sk.sat = (m.satDefault && m.satDefault[k]) || 'SET';
+      });
       hitungSJ();
       window.scrollTo(0, $('sjForm').offsetTop - 10);
     }
