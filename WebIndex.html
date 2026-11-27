@@ -101,7 +101,9 @@
       <!-- PO MASUK -->
       <section class="hal tersembunyi" id="hal-po">
         <div class="kartu">
-          <div class="kartu-kepala"><h4>Data PO</h4><span class="redup">Nomor perkiraan: <b id="poNomor">-</b> (nomor pasti diambil saat simpan)</span></div>
+          <div class="kartu-kepala"><h4>Data PO</h4><div class="baris-input"><input id="poNoEdit" placeholder="#2026-298" style="width:150px"><button class="tombol kecil" id="poBukaEdit" type="button">✏️ Ubah PO tersimpan</button></div></div>
+          <div id="poModeEdit"></div>
+          <p class="redup" id="poNomorBaris" style="margin:0 0 8px">Nomor perkiraan: <b id="poNomor">-</b> (nomor pasti diambil saat simpan)</p>
           <div class="form-grid tiga">
             <label class="penuh-2">Customer<div class="baris-input"><input id="poCustomer" list="dlCustomer" placeholder="ketik nama toko"><button class="tombol" id="poTambahCustomer" type="button">＋ Customer baru</button></div></label>
             <label>Tanggal PO<input type="date" id="poTgl"></label>
