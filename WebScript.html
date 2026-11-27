@@ -7,7 +7,6 @@
   document.querySelectorAll('.merek-nama').forEach(function (el) { el.textContent = K.merek; });
   document.querySelectorAll('.merek-huruf').forEach(function (el) { el.textContent = K.merek.charAt(0); });
   document.querySelectorAll('.merek-panjang').forEach(function (el) { el.textContent = K.merekPanjang; });
-  document.getElementById('catatanAman').textContent = K.catatan;
   const S = { token: null, nama: '', hal: 'dashboard', data: { sheet: 'TRANSAKSI', halaman: 1 }, pb: null };
   const $ = function (id) { return document.getElementById(id); };
   const JUDUL = {
