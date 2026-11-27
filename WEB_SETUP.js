@@ -5,7 +5,7 @@
    1. Buka spreadsheet database_SANFELO > Ekstensi > Apps Script.
    2. Tambahkan file skrip: WEB_APP.js, WEB_SETUP.js, WEB_PO_MASUK.js,
       WEB_SURAT_JALAN.js, WEB_POSTING_LAIN.js, WEB_KAS_LAPORAN.js,
-      WEB_CETAK.js, WEB_ALAT.js, WEB_PERCEPAT.js, WEB_KAS_CRUD.js, WEB_CUSTOMER.js, WEB_INV_SALINAN.js dan file HTML: WebIndex, WebStyle,
+      WEB_CETAK.js, WEB_ALAT.js, WEB_PERCEPAT.js, WEB_KAS_CRUD.js, WEB_CUSTOMER.js, WEB_PO_UBAH.js, WEB_INV_SALINAN.js dan file HTML: WebIndex, WebStyle,
       WebScript, WebLogo. File lama JANGAN diubah.
    2b. Jalankan webSiapkanFileCetak (sekali; ulangi kalau template nota
       di inventory diubah). Izinkan akses Drive saat diminta.

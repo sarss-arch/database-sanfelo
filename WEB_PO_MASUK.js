@@ -225,7 +225,9 @@ function webHitungPO_(a) {
     const b = barang[kode];
     if (!b) { salah.push('Baris ' + (i + 1) + ': kode ' + kode + ' tidak ada di DATA_BERSIH.'); return; }
     if (!(qty > 0)) { salah.push('Baris ' + (i + 1) + ': qty ' + kode + ' belum diisi.'); return; }
-    const harga = b.harga * qty;
+    // harga satuan khusus: hanya dikirim web saat ✏️ Ubah PO (harga PO lama dipertahankan)
+    const satuanKhusus = it.hargaSatuan === '' || it.hargaSatuan == null ? null : Number(it.hargaSatuan);
+    const harga = qty * (satuanKhusus !== null && !isNaN(satuanKhusus) ? satuanKhusus : b.harga);
     const diskon = webHargaToko_(harga, customer, method, diskonPO, dataDiskon);
     baris.push({
       line: baris.length + 1, kode: b.kode, nama: b.nama, qty: qty,
@@ -275,4 +277,35 @@ function webSimpanPOMasuk_(a, admin) {
   const hasil = webGateway_('syncPoMasuk', { jenis: 'MASUK', poNo: poNo, rows: rows });
   webCatatLog_(admin, 'PO MASUK', poNo + ' | ' + customer + ' | ' + rows.length + ' barang | ' + Math.round(hitung.total));
   return { poNo: poNo, barisDitulis: hasil.baris_ditulis, total: hitung.total, baris: hitung.baris };
+}
+
+/**
+ * Tulis hasil ✏️ Ubah PO (WEB_PO_UBAH.js) lewat aksi gateway syncPoMasuk (jalur yang sama dengan
+ * simpan PO), lalu warna status & kolom S (barang CANCELLED) di HISTORY_PO_MASUK database.
+ * susunFn dijalankan DI DALAM kunci yang sama dengan gateway.
+ */
+function webTulisUbahPO_(poNo, susunFn) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) throw new Error('Database sedang sibuk, coba lagi sebentar.');
+  WEB_LOCK_DIPEGANG_ = true; // webGateway_ menjalankan aksi langsung (kunci sudah dipegang)
+  try {
+    const s = susunFn();
+    const hasil = webGateway_('syncPoMasuk', { jenis: 'MASUK', poNo: poNo, rows: s.rows });
+    const hist = webSS_().getSheetByName('HISTORY_PO_MASUK');
+    const startRow = Number(hasil.mulai_dari_baris) || 0;
+    if (hist && startRow >= 2) {
+      const lebar = Math.max(hist.getLastColumn(), 19);
+      hist.getRange(startRow, 1, s.rows.length, lebar).setBackground('#ffffff');
+      s.susulan.forEach(function (x) {
+        const b = startRow + x.offset;
+        hist.getRange(b, 1, 1, lebar).setBackground(x.warna);
+        if (x.cancelled) hist.getRange(b, 19).setValue(x.backup || '');
+      });
+    }
+    SpreadsheetApp.flush();
+    return { barisDitulis: s.rows.length };
+  } finally {
+    WEB_LOCK_DIPEGANG_ = false;
+    lock.releaseLock();
+  }
 }

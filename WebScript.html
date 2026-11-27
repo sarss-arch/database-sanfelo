@@ -66,7 +66,7 @@
   const CACHE_LIHAT = ['dashboard', 'stok', 'laporan', 'daftarPiutang', 'daftarKas', 'daftarData', 'logWeb', 'daftarAdmin'];
   const AKSI_BACA = ['dashboard', 'daftarData', 'daftarPiutang', 'cariInvoice', 'supplierHutang', 'daftarPBHutang', 'bulanHutang', 'detailInvoice', 'logWeb', 'masterPO', 'hitungPO',
     'daftarPOTerbuka', 'muatPOSJ', 'pratinjauSJ', 'masterTT', 'muatPOKeluarTT', 'hitungTT', 'invoiceUntukBiaya', 'daftarPalet', 'detailPalet', 'pratinjauSparepart', 'stok', 'daftarKas',
-    'laporan', 'tempoTokoDaftar', 'susulanKandidat', 'statusSJ', 'groupingDaftar', 'poKeluarMuat', 'poKeluarDariPOMasuk', 'bukaSJ', 'bukaTT', 'bukaSpr', 'siapkanLatihan', 'daftarAdmin', 'versiData', 'cekHutang'];
+    'laporan', 'tempoTokoDaftar', 'susulanKandidat', 'statusSJ', 'groupingDaftar', 'poKeluarMuat', 'poKeluarDariPOMasuk', 'bukaSJ', 'bukaTT', 'bukaSpr', 'siapkanLatihan', 'daftarAdmin', 'versiData', 'cekHutang', 'bukaPO'];
   let CACHE = {};
   let SEDANG = {}; // permintaan baca yang sedang berjalan (tidak dikirim dua kali)
   let GEN = 0; // naik setiap simpanan dibuang/ditandai basi: hasil baca yang berangkat sebelumnya tidak dianggap baru
@@ -942,7 +942,7 @@
   };
 
   /* ---------- PO masuk ---------- */
-  const PO = { master: null, baris: [], timer: null, hasil: null };
+  const PO = { master: null, baris: [], timer: null, hasil: null, edit: null };
   if (K.fitur) document.querySelectorAll('[data-fitur]').forEach(function (el) { if (K.fitur.indexOf(el.dataset.fitur) === -1) el.classList.add('tersembunyi'); });
   function muatPO(paksa) {
     if (PO.master && !paksa) return;
@@ -974,16 +974,21 @@
       const terisi = b.kode && Number(b.qty) > 0;
       const x = terisi && h[iHasil] && h[iHasil].kode === b.kode ? h[iHasil++] : null;
       return '<tr><td>' + (i + 1) + '</td><td><input class="kode" list="dlBarang" data-k="' + i + '" value="' + esc(b.kode) + '"></td><td>' + esc(x ? x.nama : '') + '</td>' +
-        '<td><input class="qty" inputmode="numeric" data-q="' + i + '" value="' + esc(b.qty) + '"></td><td>' + (x ? lencanaStatus(x.status) : '') + '</td>' +
-        '<td class="kanan">' + (x ? rp(x.harga) : '') + '</td><td class="kanan">' + (x && x.diskon !== '' ? rp(x.diskon) : '') + '</td><td class="kanan"><b>' + (x && x.total !== '' ? rp(x.total) : '') + '</b></td>' +
+        '<td><input class="qty" inputmode="numeric" data-q="' + i + '" value="' + esc(b.qty) + '"></td><td>' + (b.statusLama && b.statusLama.indexOf('DONE') === 0 ? lencanaStatus(b.statusLama) : (x ? lencanaStatus(x.status) : '')) + '</td>' +
+        '<td class="kanan">' + (x ? rp(x.harga) : '') + (hargaLamaDipakai(b) ? '<br><small class="redup" title="Harga satuan PO lama (beda dari price list)">harga PO lama</small>' : '') + '</td><td class="kanan">' + (x && x.diskon !== '' ? rp(x.diskon) : '') + '</td><td class="kanan"><b>' + (x && x.total !== '' ? rp(x.total) : '') + '</b></td>' +
         '<td><button class="tombol kecil" data-hapus="' + i + '" type="button">✕</button></td></tr>';
     }).join('');
   }
   function hitungPOnanti() { clearTimeout(PO.timer); PO.timer = setTimeout(function () { satuJalan('po', hitungPO); }, 500); }
   function dataPO() {
     return { customer: $('poCustomer').value.trim(), tglPO: $('poTgl').value, tglKirim: $('poTglKirim').value, method: $('poMethod').value, diskon: $('poDiskon').value,
-      items: PO.baris.filter(function (b) { return b.kode; }).map(function (b) { return { kode: b.kode.trim(), qty: Number(b.qty) }; }) };
+      items: PO.baris.filter(function (b) { return b.kode; }).map(function (b) {
+        const it = { kode: b.kode.trim(), qty: Number(b.qty) };
+        if (hargaLamaDipakai(b)) it.hargaSatuan = b.hargaSatuan; // ✏️ Ubah PO: harga PO lama dipertahankan
+        return it;
+      }) };
   }
+  function hargaLamaDipakai(b) { return !!(PO.edit && !PO.edit.pakaiPriceList && b.hargaSatuan !== '' && b.hargaSatuan != null); }
   function hitungPO() {
     const d = dataPO();
     if (!d.items.length) { PO.hasil = null; gambarBarisPO(); $('poTotal').textContent = 'Total Rp0'; $('poPesan').innerHTML = ''; return; }
@@ -996,12 +1001,14 @@
   }
   $('poBaris').addEventListener('change', function (e) {
     const t = e.target;
-    if (t.dataset.k !== undefined) { const b = PO.baris[Number(t.dataset.k)]; b.kode = t.value.trim().toUpperCase(); if (!b.qty) b.qty = 1; gambarBarisPO(); hitungPOnanti(); }
+    if (t.dataset.k !== undefined) { const b = PO.baris[Number(t.dataset.k)]; const baru = t.value.trim().toUpperCase(); if (baru !== b.kode) { b.hargaSatuan = ''; b.statusLama = ''; } b.kode = baru; if (!b.qty) b.qty = 1; gambarBarisPO(); hitungPOnanti(); }
     if (t.dataset.q !== undefined) { PO.baris[Number(t.dataset.q)].qty = angkaInput(t.value) || ''; hitungPOnanti(); }
   });
   $('poBaris').addEventListener('click', function (e) {
     const t = e.target.closest('[data-hapus]');
     if (!t) return;
+    const bh = PO.baris[Number(t.dataset.hapus)];
+    if (PO.edit && bh && bh.statusLama && bh.statusLama.indexOf('DONE') === 0) { toast(bh.kode + ' sudah dikirim (' + bh.statusLama + '), tidak bisa dihapus dari PO.'); return; }
     PO.baris.splice(Number(t.dataset.hapus), 1);
     if (!PO.baris.length) PO.baris.push({ kode: '', qty: '' });
     PO.hasil = null; gambarBarisPO(); hitungPOnanti();
@@ -1010,7 +1017,7 @@
   ['poCustomer', 'poMethod', 'poDiskon'].forEach(function (id) { $(id).addEventListener('change', function () { infoToko(); hitungPOnanti(); }); });
   $('poReset').onclick = resetPO;
   function resetPO() {
-    PO.baris = [{ kode: '', qty: '' }]; PO.hasil = null;
+    PO.baris = [{ kode: '', qty: '' }]; PO.hasil = null; PO.edit = null; $('poModeEdit').innerHTML = ''; $('poNomorBaris').classList.remove('tersembunyi'); $('poSimpan').textContent = 'Simpan PO Masuk';
     $('poCustomer').value = ''; $('poTglKirim').value = ''; isiHariIni('poTgl', true); $('poDiskon').value = ''; $('poMethod').selectedIndex = 0;
     $('poPesan').innerHTML = ''; $('poTotal').textContent = 'Total Rp0'; infoToko(); gambarBarisPO();
   }
@@ -1020,6 +1027,7 @@
     if (!d.items.length) { toast('Belum ada barang.'); return; }
     if (JALAN.po && JALAN.po.jalan) { toast('Tunggu, total masih dihitung…'); return; }
     if (!PO.hasil || PO.hasil.salah.length) { toast('Periksa dulu pesan di bawah tabel barang.'); return; }
+    if (PO.edit) { simpanUbahPO(d); return; }
     konfirmasi('Simpan PO Masuk', '<p><b>' + esc(d.customer) + '</b> · PO ' + esc(tglTampil(d.tglPO)) + (d.tglKirim ? ' · kirim ' + esc(tglTampil(d.tglKirim)) : '') + ' · ' + esc(d.method) + (d.diskon ? ' · ' + esc(d.diskon) : '') + '</p>' +
       tabel(['Kode', 'Barang', 'Qty', 'Status', 'Total'], PO.hasil.baris.map(function (b) { return { sel: [esc(b.kode), esc(b.nama), b.qty, lencanaStatus(b.status), rp(b.total)] }; }), [2, 4]) +
       '<p style="text-align:right"><b>Total ' + rp(PO.hasil.total) + '</b></p>', 'Ya, simpan PO').then(function (ya) {
@@ -1032,6 +1040,51 @@
     });
   };
   $('poTambahCustomer').onclick = function () { bukaFormCustomer(); };
+
+  // ✏️ Ubah PO tersimpan: nomor PO tetap, LINE & status DONE SJ dijaga server (WEB_PO_UBAH.js)
+  $('poBukaEdit').onclick = function () { bukaUbahPO($('poNoEdit').value.trim()); };
+  $('poNoEdit').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('poBukaEdit').click(); });
+  function bukaUbahPO(no) {
+    if (!no) { toast('Isi nomor PO yang mau diubah.'); return; }
+    const lanjut = function () {
+      api('bukaPO', { poNo: no }, 'Membuka PO ' + no + '…').then(function (p) {
+        resetPO();
+        PO.edit = { poNo: p.poNo, sidik: p.sidik, pakaiPriceList: false };
+        $('poCustomer').value = p.customer; $('poTgl').value = p.tglPO; $('poTgl').dataset.def = ''; $('poTglKirim').value = p.tglKirim || '';
+        if ([].some.call($('poMethod').options, function (o) { return o.value === p.method; })) $('poMethod').value = p.method;
+        $('poDiskon').value = p.diskon || '';
+        PO.baris = p.items.map(function (it) { return { kode: it.kode, qty: it.qty, hargaSatuan: it.hargaSatuan, statusLama: it.status }; });
+        const adaHargaLama = p.items.some(function (it) { return it.hargaSatuan !== ''; });
+        const terkirim = p.items.filter(function (it) { return it.qtyDone > 0; });
+        $('poNomorBaris').classList.add('tersembunyi');
+        $('poSimpan').textContent = 'Simpan perubahan PO';
+        $('poModeEdit').innerHTML = '<div class="peringatan">✏️ Mengubah PO <b>' + esc(p.poNo) + '</b> (nomor PO tetap). ' +
+          (terkirim.length ? 'Barang yang sudah dikirim tidak bisa dihapus dan qty-nya tidak boleh di bawah yang sudah dikirim. ' : '') +
+          '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px">' +
+          (adaHargaLama ? '<label style="display:flex;flex-direction:row;gap:6px;align-items:center;margin:0;font-weight:600"><input type="checkbox" id="poPakaiPriceList" style="width:auto;margin:0">Pakai harga price list terbaru (bukan harga PO lama)</label>' : '') +
+          '<button class="tombol kecil" id="poBatalEdit" type="button" style="margin-left:auto">Batal ubah</button></div></div>';
+        $('poBatalEdit').onclick = function () { resetPO(); $('poNoEdit').value = ''; };
+        if ($('poPakaiPriceList')) $('poPakaiPriceList').onchange = function () { PO.edit.pakaiPriceList = this.checked; hitungPOnanti(); };
+        infoToko(); gambarBarisPO(); hitungPOnanti();
+      }).catch(gagal);
+    };
+    if (!PO.master) { api('masterPO', {}, 'Memuat customer & barang…').then(function () { muatPO(); lanjut(); }).catch(gagal); return; }
+    lanjut();
+  }
+  function simpanUbahPO(d) {
+    const e = PO.edit;
+    konfirmasi('Simpan perubahan PO ' + e.poNo, '<p><b>' + esc(d.customer) + '</b> · PO ' + esc(tglTampil(d.tglPO)) + (d.tglKirim ? ' · kirim ' + esc(tglTampil(d.tglKirim)) : '') + ' · ' + esc(d.method) + (d.diskon ? ' · ' + esc(d.diskon) : '') + '</p>' +
+      tabel(['Kode', 'Barang', 'Qty', 'Status', 'Total'], PO.hasil.baris.map(function (b) { return { sel: [esc(b.kode), esc(b.nama), b.qty, lencanaStatus(b.status), rp(b.total)] }; }), [2, 4]) +
+      '<p style="text-align:right"><b>Total ' + rp(PO.hasil.total) + '</b></p>', 'Ya, simpan perubahan').then(function (ya) {
+      if (!ya) return;
+      api('ubahPO', Object.assign({}, d, { poNo: e.poNo, sidik: e.sidik }), 'Menyimpan perubahan PO…').then(function (h) {
+        bukaModal('✅ PO diubah', '<div class="sukses">PO <b>' + esc(h.poNo) + '</b> diperbarui (' + h.barisDitulis + ' barang, total ' + rp(h.total) + ').</div>' +
+          (h.pesan && h.pesan.length ? '<div class="peringatan">' + h.pesan.map(esc).join('<br>') + '</div>' : '') + '<div class="aksi-bawah"><button class="tombol utama" id="okPO">OK</button></div>');
+        $('okPO').onclick = tutupModal;
+        resetPO(); $('poNoEdit').value = ''; muatPO(true);
+      }).catch(function (err) { $('poPesan').innerHTML = '<div class="gagal" style="white-space:pre-wrap">' + esc(err.message) + '</div>'; });
+    });
+  }
   // total diskon bertingkat = rumus kolom TOTAL di DISKON: 35+5+5 -> 41,3375
   function totalDiskon(teks) {
     const b = String(teks || '').replace(/\s/g, '').replace(/,/g, '.').split('+').filter(String);

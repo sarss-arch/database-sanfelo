@@ -133,6 +133,8 @@ const WEB_API_ = {
   gantiCustomerInvoice: function (a, admin) { return webGantiCustomerInvoice_(a, admin); },
   hitungPO: function (a) { return webHitungPO_(a); },
   simpanPO: function (a, admin) { return webSimpanPOMasuk_(a, admin); },
+  bukaPO: function (a) { return webBukaPO_(a); },
+  ubahPO: function (a, admin) { return webUbahPOMasuk_(a, admin); },
   // WEB_SURAT_JALAN.js
   daftarPOTerbuka: function (a) { return webDaftarPOTerbuka_(a); },
   muatPOSJ: function (a) { return webMuatPOuntukSJ_(a); },
