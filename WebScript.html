@@ -310,6 +310,7 @@
     // Mode latihan hanya untuk akun ADMIN
     const admin = S.nama === 'ADMIN';
     $('chipLatihan').style.display = admin ? '' : 'none';
+    $('kartuTempo').style.display = admin ? '' : 'none'; // perpanjang tempo (UNLOCKED) khusus ADMIN
     if (!admin && S.latihan) setLatihan(false);
     $('tglHariIni').textContent = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
     segarkanTanggal();
@@ -783,7 +784,7 @@
         '<div class="aksi-bawah" style="justify-content:flex-start;margin:0 0 8px">' + tombol('semua', 'Semua', d.toko.length) + tombol('LOCKED', 'LOCKED', n.LOCKED) + tombol('lain', 'Mendekati batas', n.lain) + tombol('UNLOCKED', 'UNLOCKED', n.UNLOCKED) + '</div>' +
         '<div style="max-height:360px;overflow:auto">' + tabel(['Customer', 'Pembelian', 'Invoice LOCKED', ''], tampil.map(function (t) {
           return { sel: [esc(t.customer), lencanaStatus(t.status), esc(t.invoice.map(function (i) { return i.noInv + ' (tempo ' + i.tempo + ')'; }).join(', ')),
-            t.status === 'LOCKED' ? '<button class="tombol kecil" data-perpanjang="' + esc(t.customer) + '" type="button">🔓 Perpanjang</button>' : ''] };
+            t.status === 'LOCKED' && S.nama === 'ADMIN' ? '<button class="tombol kecil" data-perpanjang="' + esc(t.customer) + '" type="button">🔓 Perpanjang</button>' : ''] };
         })) + '</div>' +
         '<p class="redup">Mendekati batas = sudah lewat tempo tapi masih dalam masa tenggang; angka HARI sama dengan yang tampil di inventory.</p>';
       $('ringTempo').querySelectorAll('[data-ring]').forEach(function (b) { b.onclick = function () { S.data.ringFilter = b.dataset.ring; muatRingkasanTempo(); }; });

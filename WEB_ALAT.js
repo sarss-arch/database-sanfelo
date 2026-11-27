@@ -264,6 +264,11 @@ function webTempoTokoDaftar_() {
 }
 
 function webPerpanjangTempo_(a, admin) {
+  // khusus pemilik: NUR / SILVA tidak boleh membuka (UNLOCKED) toko yang jatuh tempo
+  if (admin !== 'ADMIN') {
+    webCatatLog_(admin, 'PERPANJANG TEMPO DITOLAK', String(a.customer || '') + ' | bukan akun ADMIN');
+    throw new Error('Perpanjang tempo toko hanya bisa dilakukan akun ADMIN.');
+  }
   const inv = webInv_();
   const customer = String(a.customer || '').trim();
   if (!customer) throw new Error('Pilih toko dulu.');
