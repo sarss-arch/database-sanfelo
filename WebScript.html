@@ -323,6 +323,7 @@
     $('loginPin').value = '';
     if (diam) $('loginPesan').textContent = 'Sesi habis, silakan masuk lagi.';
   }
+  $('tombolKeluar').onclick = function () { keluar(false); };
   // 🔄 Segarkan: ambil ulang data terbaru dari spreadsheet (mis. sesudah ada yang diedit langsung di sheet)
   if ($('tombolSegarkan')) $('tombolSegarkan').onclick = function () {
     kosongkanCache(); S.segarSampai = Date.now() + 20000;
