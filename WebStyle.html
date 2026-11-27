@@ -42,7 +42,14 @@
   .merek { display: flex; gap: 10px; align-items: center; }
   .merek .logo { width: 44px; height: 44px; border-radius: 12px; }
   .merek small { display: block; color: var(--redup); font-size: 11px; }
-  nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  /* menu samping bisa digulir sendiri kalau layar pendek (laptop kecil / zoom besar) */
+  .sidebar { height: 100dvh; max-height: 100vh; overflow: hidden; }
+  nav { display: flex; flex-direction: column; gap: 2px; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-right: -8px; padding-right: 8px; scrollbar-width: thin; scrollbar-color: #c9d3ce transparent; }
+  nav::-webkit-scrollbar { width: 8px; }
+  nav::-webkit-scrollbar-thumb { background: #c9d3ce; border-radius: 8px; }
+  nav::-webkit-scrollbar-track { background: transparent; }
+  .sidebar > .merek, .sidebar > .kotak-aman { flex-shrink: 0; }
+  @media (max-height: 720px) { .sidebar .kotak-aman { display: none; } .sidebar { gap: 10px; } }
   .nav-judul { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: #9aaba3; margin: 14px 10px 6px; text-transform: uppercase; }
   nav a { color: var(--teks); font-weight: 600; padding: 10px 12px; border-radius: 12px; display: flex; gap: 10px; align-items: center; }
   nav a:hover { background: var(--hijau-muda); }
