@@ -721,11 +721,12 @@
       '<div class="form-grid"><label>Tanggal bayar<input type="date" id="hTgl" value="' + hariIniIso() + '"></label><label>Metode<select id="hMetode"><option>TRANSFER</option><option>TUNAI</option><option>ADJUSTMENT</option></select></label>' +
       '<label id="hKetBungkus" class="tersembunyi penuh">Keterangan adjustment<input id="hKet" maxlength="60" placeholder="mis. pembulatan, biaya admin"></label></div>' +
       '<div class="peringatan" id="hInfo">Centang PB yang dibayar. Kalau lebih dari 1 PB dicentang, masing-masing dibayar penuh sesuai sisanya (sama seperti di spreadsheet). Untuk cicilan, centang 1 PB saja lalu ubah jumlahnya.</div>' +
-      '<div class="aksi-bawah"><b id="hTotal" style="align-self:center">Dipilih: Rp0</b><button class="tombol utama" id="hBayar" disabled>Bayar</button></div></div>';
+      '<div class="aksi-bawah"><b id="hTotal" style="align-self:center">Dipilih: Rp0</b><button class="tombol utama" id="hBayar" disabled>Bayar</button><button class="tombol" id="hPengajuan" type="button">Cetak pengajuan</button></div></div>';
     $('hMetode').onchange = function () { $('hKetBungkus').classList.toggle('tersembunyi', !K.ketAdj || this.value !== 'ADJUSTMENT'); };
     document.querySelectorAll('.pbCek').forEach(function (c) { c.onchange = segarkanPilihanPB; });
     document.querySelectorAll('.pbJumlah').forEach(function (inp) { inp.addEventListener('input', function () { const n = angkaInput(this.value); this.value = n ? n.toLocaleString('id-ID') : ''; segarkanPilihanPB(); }); });
     $('hBayar').onclick = bayarPB;
+    $('hPengajuan').onclick = cetakPengajuan;
   }
   function pilihanPB() {
     const dipilih = [];
@@ -743,6 +744,36 @@
     const total = dipilih.reduce(function (s, i) { return s + angkaInput(document.querySelector('.pbJumlah[data-j="' + i + '"]').value); }, 0);
     $('hTotal').textContent = 'Dipilih: ' + dipilih.length + ' PB · ' + rp(total);
     $('hBayar').disabled = !dipilih.length;
+  }
+  // Cetak pengajuan pembayaran hutang ke supplier: NAMA SUPLIER | NO SJ | TGL | BULAN | TOTAL NETTO + rekening.
+  // Isi = PB yang dicentang (jumlah bayarnya); kalau tidak ada yang dicentang -> semua PB yang belum lunas.
+  const BULAN_PENDEK = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUNI', 'JULI', 'AGUST', 'SEPT', 'OKT', 'NOV', 'DES'];
+  function rekeningSupplier(nama) {
+    const n = String(nama || '').trim().toUpperCase(), r = K.rekeningSupplier || {};
+    const k = Object.keys(r).filter(function (x) { return n === x || n.indexOf(x) === 0 || x.indexOf(n) === 0; })[0];
+    return k ? r[k] : null;
+  }
+  function cetakPengajuan() {
+    const h = S.pb; if (!h || !h.success) return;
+    const dipilih = pilihanPB();
+    const baris = (dipilih.length ? dipilih.map(function (i) { return { p: h.daftarPB[i], jml: angkaInput(document.querySelector('.pbJumlah[data-j="' + i + '"]').value) }; })
+      : h.daftarPB.filter(function (p) { return p.sisaBayar > 0; }).map(function (p) { return { p: p, jml: p.sisaBayar }; }));
+    if (!baris.length) { toast('Tidak ada PB yang belum lunas.'); return; }
+    const bulanTeks = function (t) { const x = String(t || '').split('/'); return x.length === 3 ? BULAN_PENDEK[Number(x[1]) - 1] + '-' + x[2] : String(h.bulan || ''); };
+    const angka = function (n) { return Math.round(Number(n) || 0).toLocaleString('id-ID'); };
+    const total = baris.reduce(function (s, b) { return s + (Number(b.jml) || 0); }, 0);
+    const rek = rekeningSupplier(h.supplier);
+    $('areaCetak').innerHTML = '<div class="pengajuan-cetak"><table><thead><tr><th>NAMA SUPLIER</th><th>NO SJ</th><th>TGL</th><th>BULAN</th><th class="kanan">TOTAL<br>NETTO</th></tr></thead><tbody>' +
+      baris.map(function (b) { return '<tr><td>' + esc(h.supplier) + '</td><td>' + esc(b.p.noSJ) + '</td><td class="kanan">' + esc(b.p.tglBeli) + '</td><td>' + esc(bulanTeks(b.p.tglBeli)) + '</td><td class="kanan">' + angka(b.jml) + '</td></tr>'; }).join('') +
+      '<tr><td></td><td></td><td></td><td>TOTAL</td><td class="kanan"><b>' + angka(total) + '</b></td></tr>' +
+      '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>' +
+      '<tr><td><b>' + esc(rek ? rek[0] : 'BANK: (belum diatur)') + '</b></td><td></td><td></td><td></td><td></td></tr>' +
+      '<tr><td><b>' + esc(rek ? rek[1] : '-') + '</b></td><td></td><td></td><td></td><td></td></tr></tbody></table></div>';
+    if (!rek) toast('Rekening ' + h.supplier + ' belum diatur, cetakan tanpa nomor rekening.');
+    document.body.classList.add('cetak-rekap');
+    const selesai = function () { document.body.classList.remove('cetak-rekap'); window.removeEventListener('afterprint', selesai); };
+    window.addEventListener('afterprint', selesai);
+    setTimeout(function () { window.print(); setTimeout(selesai, 1500); }, 50);
   }
   function bayarPB() {
     const h = S.pb;

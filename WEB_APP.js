@@ -34,6 +34,8 @@ function doGet(e) {
   const t = HtmlService.createTemplateFromFile('WebIndex');
   t.konfig = JSON.stringify({
     merek: 'SANFELO', merekPanjang: 'SANFELO LIVING', ketAdj: true, fitur: ['po', 'sj', 'tt', 'biaya', 'spr', 'stok', 'kas', 'laporan', 'cetak', 'latihan', 'alat', 'pok'],
+    // rekening supplier untuk cetak pengajuan pembayaran hutang (nama supplier dicocokkan awalan)
+    rekeningSupplier: { 'SIANTAN': ['BCA - ANUGERAH PUTRA SIANTAN P', '3688838888'], 'NATHANIA': ['BCA - NATHANIA FURNITURE PT', '3683080001'] },
     catatan: 'di database_SANFELO, lewat jalur yang sama dengan spreadsheet inventory'
   });
   return t.evaluate()
