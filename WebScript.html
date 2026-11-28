@@ -340,7 +340,7 @@
     $('akunAvatar').textContent = String(S.nama || '?').slice(0, 2);
     // Mode latihan & menu Sistem hanya untuk akun ADMIN
     const admin = S.nama === 'ADMIN';
-    $('chipLatihan').style.display = admin ? '' : 'none';
+    $('chipLatihan').classList.toggle('tersembunyi', !admin || (K.fitur && K.fitur.indexOf('latihan') === -1));
     document.querySelectorAll('.khusus-admin').forEach(function (el) { el.style.display = admin ? '' : 'none'; });
     $('kartuTempo').style.display = admin ? '' : 'none'; // perpanjang tempo (UNLOCKED) khusus ADMIN
     if (!admin && S.latihan) setLatihan(false);
@@ -961,7 +961,7 @@
     const header = (cfg.jenis ? [''] : []).concat(x.kolom.map(function (i) { return x.header[i]; })).concat(cfg.tambahStatus ? ['STATUS'] : []).concat(cfg.aksiCustomer ? [''] : []);
     const kanan = [];
     x.kolom.forEach(function (i, pos) { if (x.uang.indexOf(i + 1) !== -1 || cfg.uang.indexOf(x.header[i]) !== -1) kanan.push(pos + (cfg.jenis ? 1 : 0)); });
-    $('tabel-' + kunci).innerHTML = (hasil.length ? tabel(header, tampil.map(function (b) {
+    $('tabel-' + kunci).innerHTML = (hasil.length ? '<div class="tabel-daftar">' + tabel(header, tampil.map(function (b) {
       const sel = [];
       if (cfg.jenis) sel.push(b.nomor ? '<button class="tombol-mata" type="button" title="Lihat ' + esc(b.nomor) + '" data-buka-nota="' + cfg.jenis + '" data-nomor="' + esc(b.nomor) + '">👁</button>' : '');
       x.kolom.forEach(function (i) {
@@ -970,13 +970,13 @@
         if ((x.uang.indexOf(i + 1) !== -1 || cfg.uang.indexOf(h) !== -1) && typeof v === 'number') { sel.push(rp(v)); return; }
         if (/STATUS|PEMBELIAN/.test(h) && v) { sel.push(lencanaStatus(v)); return; }
         const t = esc(b.v[i]);
-        sel.push(String(b.v[i] || '').length > 35 ? '<span class="panjang">' + t + '</span>' : t);
+        sel.push(String(b.v[i] || '').length > 35 ? '<span class="panjang" title="' + t + '">' + t + '</span>' : t);
       });
       if (cfg.tambahStatus) sel.push(lencanaStatus(b.status));
       if (cfg.aksiCustomer) sel.push(b.v0[0] ? '<span style="white-space:nowrap"><button class="tombol kecil" type="button" data-ubah-cust="' + b.no + '" data-v="' + esc(JSON.stringify(b.v0.slice(0, 7))) + '">✏️ Ubah</button> <button class="tombol kecil" type="button" data-hapus-cust="' + b.no + '" data-nama="' + esc(b.v0[0]) + '">🗑️ Hapus</button></span>' : '');
       const noInv = cfg.invoice ? String(b.v0[x.idx(cfg.invoice)] || '') : '';
       return { attr: /^(INV|SPRIN)-/.test(noInv) ? 'data-inv="' + esc(noInv) + '"' : '', sel: sel };
-    }), kanan) : '<div class="kosong">Tidak ada data yang cocok.</div>') +
+    }), kanan) + '</div>' : '<div class="kosong">Tidak ada data yang cocok.</div>') +
       (hasil.length > batas ? '<div class="lebih-banyak"><button class="tombol kecil" type="button" id="lagi-' + kunci + '">Tampilkan ' + Math.min(BATAS_BARIS, hasil.length - batas) + ' lagi (' + (hasil.length - batas) + ' tersisa)</button></div>' : '');
     if ($('lagi-' + kunci)) $('lagi-' + kunci).onclick = function () { x.batas = batas + BATAS_BARIS; gambarDaftar(kunci); };
     if (cfg.aksiCustomer) pasangAksiCustomer(kunci);

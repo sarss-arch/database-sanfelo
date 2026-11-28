@@ -189,6 +189,7 @@
   .pilih-nama button.aktif { background: var(--hijau-muda); border-color: var(--hijau); color: var(--hijau-tua); box-shadow: inset 0 0 0 1px var(--hijau); }
   .cek-kecil { display: flex !important; flex-direction: row !important; align-items: center; gap: 6px; font-size: 12px !important; font-weight: 600; color: var(--redup); margin: 2px 0 6px; cursor: pointer; }
   .cek-kecil input { width: 14px !important; height: 14px; margin: 0; padding: 0; }
+  .cek-kecil.tersembunyi { display: none !important; }
   /* sidebar: panel akun menempel di bawah */
   .panel-akun { flex-shrink: 0; border-top: 1px solid var(--garis); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
   .akun-baris { display: flex; gap: 10px; align-items: center; }
@@ -202,7 +203,9 @@
   .akun-tombol .tombol { justify-content: center; }
   .kepala-kanan:empty { display: none; }
   /* dashboard: ringkasan PO di kotak sapaan */
-  .hero-po { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-width: 340px; }
+  .hero { flex-wrap: wrap; }
+  .hero-teks { flex: 1 1 260px; min-width: 240px; }
+  .hero-po { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1 1 360px; max-width: 520px; }
   .hero-po .po-kotak { background: #fff; border: 1px solid var(--garis); border-radius: 16px; padding: 12px 14px; cursor: pointer; text-align: left; font: inherit; color: var(--teks); }
   .hero-po .po-kotak:hover { border-color: var(--hijau); }
   .hero-po .po-kotak small { display: block; color: var(--redup); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
@@ -222,6 +225,8 @@
   .tombol-mata { border: 1px solid var(--garis); background: #fff; border-radius: 10px; width: 32px; height: 30px; cursor: pointer; font-size: 15px; line-height: 1; }
   .tombol-mata:hover { border-color: var(--hijau); background: var(--hijau-muda); }
   .lebih-banyak { text-align: center; margin-top: 10px; }
+  .tabel-daftar td { white-space: nowrap; }
+  .tabel-daftar .panjang { display: inline-block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; white-space: nowrap; }
   /* detail nota (seperti Laurence) */
   .nota-ringkas { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; }
   .nota-ringkas > div small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--redup); text-transform: uppercase; }
