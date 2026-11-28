@@ -763,7 +763,7 @@
     const angka = function (n) { return Math.round(Number(n) || 0).toLocaleString('id-ID'); };
     const total = baris.reduce(function (s, b) { return s + (Number(b.jml) || 0); }, 0);
     const rek = rekeningSupplier(h.supplier);
-    $('areaCetak').innerHTML = '<div class="pengajuan-cetak"><table><thead><tr><th>NAMA SUPLIER</th><th>NO SJ</th><th>TGL</th><th>BULAN</th><th class="kanan">TOTAL<br>NETTO</th></tr></thead><tbody>' +
+    $('areaCetak').innerHTML = '<div class="pengajuan-cetak"><table><thead><tr><th>NAMA SUPLIER</th><th>NO SJ</th><th>TGL</th><th>BULAN</th><th class="kanan putih">TOTAL<br>NETTO</th></tr></thead><tbody>' +
       baris.map(function (b) { return '<tr><td>' + esc(h.supplier) + '</td><td>' + esc(b.p.noSJ) + '</td><td class="kanan">' + esc(b.p.tglBeli) + '</td><td>' + esc(bulanTeks(b.p.tglBeli)) + '</td><td class="kanan">' + angka(b.jml) + '</td></tr>'; }).join('') +
       '<tr><td></td><td></td><td></td><td>TOTAL</td><td class="kanan"><b>' + angka(total) + '</b></td></tr>' +
       '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>' +

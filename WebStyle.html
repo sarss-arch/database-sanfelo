@@ -285,8 +285,14 @@
   .kas-ringkas b { font-size: 15px; }
   /* cetak pengajuan pembayaran hutang (format seperti spreadsheet) */
   .pengajuan-cetak table { width: 100%; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #000; }
-  .pengajuan-cetak th, .pengajuan-cetak td { border: 1.5px solid #333; padding: 5px 8px; text-align: left; height: 26px; }
-  .pengajuan-cetak th { font-size: 20px; font-weight: 800; background: #f2f2f2; color: #000; letter-spacing: 0; text-transform: none; vertical-align: bottom; }
+  .pengajuan-cetak th, .pengajuan-cetak td { border: 1.5px solid #333 !important; border-radius: 0 !important; padding: 5px 8px; text-align: left; height: 26px; }
+  .pengajuan-cetak th { font-size: 20px; font-weight: 800; background: #d9d9d9 !important; color: #000; letter-spacing: 0; text-transform: none; vertical-align: bottom; }
+  .pengajuan-cetak th.putih { background: #fff !important; }
+  .pengajuan-cetak th, .rekap-cetak th { position: static !important; white-space: normal; }
+  .rekap-cetak th, .rekap-cetak td { border: 1px solid #999 !important; }
+  .rekap-cetak th { background: #e6e6e6 !important; color: #000 !important; }
+  /* warna abu-abu judul kolom tetap tercetak walau "Grafis latar belakang" tidak dicentang */
+  .pengajuan-cetak, .pengajuan-cetak * , .rekap-cetak, .rekap-cetak * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .pengajuan-cetak td { font-size: 16px; color: #000; }
   .pengajuan-cetak th:nth-child(1) { width: 34%; } .pengajuan-cetak th:nth-child(2) { width: 22%; } .pengajuan-cetak th:nth-child(3) { width: 11%; } .pengajuan-cetak th:nth-child(4) { width: 15%; }
   .pengajuan-cetak .kanan { text-align: right; }
@@ -301,7 +307,10 @@
   @media print {
     body.cetak-rekap #aplikasi, body.cetak-rekap .layar-login, body.cetak-rekap .latar-modal, body.cetak-rekap .garis-muat { display: none !important; }
     body.cetak-rekap #areaCetak { display: block !important; }
-    @page { size: A4 portrait; margin: 12mm; }
+    /* margin 0 = browser tidak menambah tanggal, judul halaman, link & nomor halaman; jarak tepi dari padding */
+    @page { size: A4 portrait; margin: 0; }
+    body.cetak-rekap { background: #fff !important; margin: 0; }
+    body.cetak-rekap #areaCetak { padding: 14mm 12mm; }
   }
   @media (max-width: 900px) { .grid-stat.tiga { grid-template-columns: 1fr; } .tabel-nota .sub-barang { max-width: 200px; } }
 </style>
