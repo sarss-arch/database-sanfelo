@@ -69,7 +69,7 @@
   const CACHE_LIHAT = ['dashboard', 'stok', 'laporan', 'daftarPiutang', 'daftarKas', 'daftarData', 'logWeb', 'daftarAdmin', 'semuaData'];
   const AKSI_BACA = ['dashboard', 'daftarData', 'daftarPiutang', 'cariInvoice', 'supplierHutang', 'daftarPBHutang', 'bulanHutang', 'detailInvoice', 'logWeb', 'masterPO', 'hitungPO',
     'daftarPOTerbuka', 'muatPOSJ', 'pratinjauSJ', 'masterTT', 'muatPOKeluarTT', 'hitungTT', 'invoiceUntukBiaya', 'daftarPalet', 'detailPalet', 'pratinjauSparepart', 'stok', 'daftarKas',
-    'laporan', 'tempoTokoDaftar', 'susulanKandidat', 'statusSJ', 'groupingDaftar', 'poKeluarMuat', 'poKeluarDariPOMasuk', 'bukaSJ', 'bukaTT', 'bukaSpr', 'siapkanLatihan', 'daftarAdmin', 'versiData', 'cekHutang', 'bukaPO', 'semuaData', 'dokumen', 'nomorSJ', 'pdfHtml'];
+    'laporan', 'tempoTokoDaftar', 'susulanKandidat', 'statusSJ', 'groupingDaftar', 'poKeluarMuat', 'poKeluarDariPOMasuk', 'bukaSJ', 'bukaTT', 'bukaSpr', 'siapkanLatihan', 'daftarAdmin', 'versiData', 'cekHutang', 'bukaPO', 'semuaData', 'dokumen', 'nomorSJ', 'pdfHtml', 'riwayatBayarHutang'];
   let CACHE = {};
   let SEDANG = {}; // permintaan baca yang sedang berjalan (tidak dikirim dua kali)
   let GEN = 0; // naik setiap simpanan dibuang/ditandai basi: hasil baca yang berangkat sebelumnya tidak dianggap baru
@@ -714,7 +714,7 @@
     if (!h.success) { $('areaPB').innerHTML = '<div class="kartu"><div class="kosong">' + esc(h.message) + '</div></div>'; return; }
     const baris = h.daftarPB.map(function (p, i) {
       const bisa = p.sisaBayar > 0;
-      return '<tr class="pb-baris"><td>' + (bisa ? '<input type="checkbox" data-i="' + i + '" class="pbCek" style="width:auto">' : '') + '</td><td><b>' + esc(p.pb) + '</b><br><small class="redup">' + esc(p.noInv) + ' · SJ ' + esc(p.noSJ) + '</small></td><td>' + esc(p.tglBeli) + '</td><td>' + esc(p.jatuhTempo) + '</td><td class="kanan">' + rp(p.total) + '</td><td class="kanan"><b>' + (p.isLebih ? 'LEBIH' : rp(p.sisaBayar)) + '</b></td><td>' + lencanaStatus(p.status) + '</td><td>' + (bisa ? '<input data-j="' + i + '" class="pbJumlah" inputmode="numeric" value="' + Math.round(p.sisaBayar).toLocaleString('id-ID') + '" disabled>' : '') + '</td></tr>';
+      return '<tr class="pb-baris"><td>' + (bisa ? '<input type="checkbox" data-i="' + i + '" class="pbCek" style="width:auto">' : '') + '</td><td><b>' + esc(p.pb) + '</b><br><small class="redup">' + esc(p.noInv) + ' · SJ ' + esc(p.noSJ) + '</small></td><td>' + esc(p.tglBeli) + '</td><td>' + esc(p.jatuhTempo) + '</td><td class="kanan">' + rp(p.total) + '</td><td class="kanan"><b>' + (p.isLebih ? 'LEBIH' : rp(p.sisaBayar)) + '</b></td><td>' + lencanaStatus(p.status) + (Number(p.total) > 0 && (!bisa || p.sisaBayar < p.total) ? '<br><a class="tautan-kecil" data-riwayat-hutang="' + i + '">🕘 riwayat / ubah tgl</a>' : '') + '</td><td>' + (bisa ? '<input data-j="' + i + '" class="pbJumlah" inputmode="numeric" value="' + Math.round(p.sisaBayar).toLocaleString('id-ID') + '" disabled>' : '') + '</td></tr>';
     }).join('');
     $('areaPB').innerHTML = (pesan || '') + '<div class="ringkas"><div class="pil"><small class="redup">Total tagihan</small> <b>' + rp(h.totalTagihan) + '</b></div><div class="pil"><small class="redup">Sisa</small> <b>' + rp(h.sisaTagihan) + '</b></div><div class="pil">' + lencanaStatus(h.status === 'Lunas' ? 'LUNAS' : 'CICIL') + '</div></div>' +
       '<div class="kartu"><div class="tabel-bungkus"><table><thead><tr><th></th><th>PB</th><th>Tgl beli</th><th>Jatuh tempo</th><th class="kanan">Total</th><th class="kanan">Sisa</th><th>Status</th><th>Jumlah bayar</th></tr></thead><tbody>' + baris + '</tbody></table></div>' +
@@ -726,6 +726,7 @@
     document.querySelectorAll('.pbCek').forEach(function (c) { c.onchange = segarkanPilihanPB; });
     document.querySelectorAll('.pbJumlah').forEach(function (inp) { inp.addEventListener('input', function () { const n = angkaInput(this.value); this.value = n ? n.toLocaleString('id-ID') : ''; segarkanPilihanPB(); }); });
     $('hBayar').onclick = bayarPB;
+    document.querySelectorAll('[data-riwayat-hutang]').forEach(function (el) { el.onclick = function () { bukaRiwayatHutang(S.pb.daftarPB[Number(el.dataset.riwayatHutang)]); }; });
     $('hPengajuan').onclick = cetakPengajuan;
   }
   function pilihanPB() {
@@ -750,7 +751,8 @@
   const BULAN_PENDEK = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUNI', 'JULI', 'AGUST', 'SEPT', 'OKT', 'NOV', 'DES'];
   function rekeningSupplier(nama) {
     const n = String(nama || '').trim().toUpperCase(), r = K.rekeningSupplier || {};
-    const k = Object.keys(r).filter(function (x) { return n === x || n.indexOf(x) === 0 || x.indexOf(n) === 0; })[0];
+    // cocok kalau nama supplier sama / mengandung kata kunci (mis. "PT ANUGERAH PUTRA SIANTAN" -> SIANTAN); kunci terpanjang menang
+    const k = Object.keys(r).filter(function (x) { return n === x || n.indexOf(x) !== -1 || x.indexOf(n) === 0; }).sort(function (a, b) { return b.length - a.length; })[0];
     return k ? r[k] : null;
   }
   function cetakPengajuan() {
@@ -781,6 +783,29 @@
   function unduhHtmlPdf(nama, isi, css) {
     const html = '<html><head><meta charset="utf-8"><style>' + css + '</style></head><body>' + isi + '</body></html>';
     return api('pdfHtml', { nama: nama, html: html }, 'Membuat PDF…').then(function (h) { unduhPdf(h.nama, h.pdf); toast('PDF diunduh: ' + h.nama); }).catch(gagal);
+  }
+  // riwayat bayar 1 PB + ubah tanggal bayar yang salah ketik (juga untuk PB yang sudah LUNAS)
+  function bukaRiwayatHutang(p) {
+    api('riwayatBayarHutang', { baris: p.rowIndex, pb: p.pb }, 'Membuka riwayat ' + p.pb + '…').then(function (h) {
+      if (!h.list.length) { toast('Belum ada pembayaran untuk ' + p.pb + '.'); return; }
+      bukaModal('🕘 Riwayat bayar ' + p.pb, '<p class="redup">' + esc(h.supplier) + ' · tanggal yang salah bisa diganti. Jumlah, metode & sisa tidak berubah.</p>' +
+        tabel(['Tanggal', 'Jumlah', 'Metode', 'Tanggal baru', ''], h.list.map(function (x, i) {
+          return { sel: [esc(x.tgl), esc(x.jumlah), esc(x.metode), '<input type="date" id="rhTgl' + i + '" value="' + esc(tglIsoDari(x.tgl)) + '" style="width:150px">', '<button class="tombol kecil" type="button" data-rh="' + i + '">Simpan</button>'] };
+        })) + '<label>Alasan (wajib)<input id="rhAlasan" placeholder="mis. salah bulan, seharusnya Oktober"></label><div id="rhPesan"></div>' +
+        '<div class="aksi-bawah"><button class="tombol" id="rhTutup" type="button">Tutup</button></div>');
+      $('rhTutup').onclick = tutupModal;
+      document.querySelectorAll('[data-rh]').forEach(function (b) {
+        b.onclick = function () {
+          const i = Number(b.dataset.rh), x = h.list[i], tgl = $('rhTgl' + i).value, alasan = $('rhAlasan').value.trim();
+          if (!tgl) { $('rhPesan').innerHTML = '<div class="gagal">Isi tanggal baru.</div>'; return; }
+          if (alasan.length < 3) { $('rhPesan').innerHTML = '<div class="gagal">Isi alasannya dulu.</div>'; return; }
+          b.disabled = true;
+          api('ubahTglBayarHutang', { baris: p.rowIndex, pb: p.pb, kolom: x.kolom, lama: x.teks, tglBaru: tgl, alasan: alasan }, 'Menyimpan tanggal bayar…').then(function (r) {
+            tutupModal(); toast(r.pesan); muatPB();
+          }).catch(function (err) { b.disabled = false; $('rhPesan').innerHTML = '<div class="gagal">' + esc(err.message) + '</div>'; });
+        };
+      });
+    }).catch(gagal);
   }
   function bayarPB() {
     const h = S.pb;
