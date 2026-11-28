@@ -255,7 +255,9 @@ function webCetakPOKeluar_(inv, ss, poNo) {
   webRapikanKepalaPOK_(sh, poNo, tglRow && tglRow[1]); // cetakan untuk pabrik: T-xxx, kepala rapi
   SpreadsheetApp.flush();
   // sampai baris TOTAL QTY (dulu sampai baris terakhir sheet -> banyak halaman kosong)
-  return webEksporPdf_(ss, sh, webBarisAkhirPOK_(sh, items.length), 6, 'PO KELUAR - ' + webNomorPOCetak_(poNo), 'POK', 0.3);
+  let akhir = 7 + items.length + 1;
+  try { akhir = webBarisAkhirPOK_(sh, items.length); } catch (err) { Logger.log('Batas PO keluar: ' + err); }
+  return webEksporPdf_(ss, sh, akhir, 6, 'PO KELUAR - ' + webNomorPOCetak_(poNo), 'POK', 0.3);
 }
 
 
@@ -291,16 +293,24 @@ function webNomorPOCetak_(poNo) {
   return m ? WEB_AWALAN_PO_CETAK_ + '-' + m[1] : String(poNo || '').trim();
 }
 
-// kepala PO keluar (hanya di file cetak web): judul & alamat rata kanan, NO. PO tetap kiri, TGL rata kanan
+// kepala PO keluar (hanya di file cetak web, form inventory tidak disentuh):
+// tata letak sama dengan form PO_KELUAR (logo A1, judul & alamat C1:E1 / C2:E2), alamat rata kanan,
+// NO. PO tetap di B4 (T-/N-), TGL rata kanan. TANPA merge sel baru (merge bisa gagal "Kesalahan layanan");
+// setiap langkah dijaga supaya PDF tetap jadi walaupun perapian gagal.
 function webRapikanKepalaPOK_(sh, poNo, tgl) {
+  const coba = function (fn) { try { fn(); } catch (err) { Logger.log('Rapikan PO keluar: ' + err); } };
+  // pulihkan bentuk template (percobaan versi sebelumnya bisa membuat C1:F1 / E4:F4 tergabung)
   [1, 2].forEach(function (r) {
-    sh.getRange(r, 3, 1, 4).breakApart();
-    sh.getRange(r, 3, 1, 4).merge().setHorizontalAlignment('right');
+    coba(function () { sh.getRange(r, 3, 1, 4).breakApart(); });
+    coba(function () { sh.getRange(r, 3, 1, 3).merge(); });
   });
-  sh.getRange('B4').setValue(webNomorPOCetak_(poNo)).setHorizontalAlignment('left');
-  const teksTgl = tgl instanceof Date ? Utilities.formatDate(tgl, WEB_TZ, 'dd/MM/yyyy') : String(sh.getRange('E4').getDisplayValue() || '').trim();
-  sh.getRange('D4').clearContent();
-  sh.getRange('E4:F4').breakApart();
-  sh.getRange('E4:F4').clearContent().merge();
-  sh.getRange('E4').setNumberFormat('@').setValue('TGL:  ' + teksTgl).setHorizontalAlignment('right');
+  coba(function () { sh.getRange('E4:F4').breakApart(); });
+  coba(function () { sh.getRange(1, 3, 1, 3).setHorizontalAlignment('center'); });
+  coba(function () { sh.getRange(2, 3, 1, 3).setHorizontalAlignment('right'); });
+  coba(function () { sh.getRange('B4').setValue(webNomorPOCetak_(poNo)).setHorizontalAlignment('left'); });
+  coba(function () {
+    const teksTgl = tgl instanceof Date ? Utilities.formatDate(tgl, WEB_TZ, 'dd/MM/yyyy') : String(sh.getRange('E4').getDisplayValue() || '').trim();
+    sh.getRange('D4').clearContent();
+    sh.getRange('E4').setNumberFormat('@').setValue('TGL:  ' + teksTgl).setHorizontalAlignment('right');
+  });
 }

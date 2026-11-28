@@ -429,9 +429,6 @@
         const ket = h.hari === null || h.hari === undefined ? 'tanpa jatuh tempo' : (h.hari < 0 ? 'lewat ' + (-h.hari) + ' hari' : (h.hari === 0 ? 'hari ini' : h.hari + ' hari lagi'));
         return '<div class="baris-daftar"><div><b>' + esc(h.pb) + '</b><small>' + esc(h.supplier) + ' · ' + esc(h.jatuhTempo) + ' · <span style="color:' + (h.hari !== null && h.hari < 0 ? '#b4473b' : 'inherit') + '">' + ket + '</span></small></div><b>' + rp(h.sisa) + '</b></div>';
       }).join('') : '<div class="kosong">Tidak ada hutang</div>';
-      const rp2 = d.ringkasPO;
-      $('heroPO').innerHTML = rp2 ? '<button class="po-kotak" type="button" data-pergi="po"><small>PO Masuk</small><b>' + rp2.masuk.terbuka + ' terbuka</b><span>' + rp2.masuk.barangSisa + ' barang belum dikirim · ' + rp(rp2.masuk.nilaiSisa) + '<br>' + rp2.masuk.bulanIni + ' PO bulan ini</span></button>' +
-        '<button class="po-kotak" type="button" data-pergi="pok"><small>PO Keluar</small><b>' + rp2.keluar.terbuka + ' terbuka</b><span>' + rp2.keluar.barangBelum + ' barang belum diterima<br>' + rp2.keluar.bulanIni + ' PO bulan ini</span></button>' : '';
       $('dashTransaksi').innerHTML = tabel(['Tanggal', 'No SJ', 'No Invoice', 'Customer', 'Total', 'Status'],
         d.transaksiTerbaru.map(function (t) {
           return { attr: 'data-buka-nota="SJ" data-nomor="' + esc(t.noSJ) + '"', sel: [esc(t.tanggal), esc(t.noSJ), esc(t.noInv), esc(t.customer), '<span class="kanan">' + rp(t.total) + '</span>', lencanaStatus(t.status)] };
@@ -854,6 +851,7 @@
     hutangsheet: { sheet: 'HUTANG', status: 'STATUS', uang: ['TOTAL', 'SISA BAYAR'], judul: 'Semua hutang (HUTANG)', ambilKolom: 11 }
   };
   const BATAS_BARIS = 100;
+  const IKON_LIHAT = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 
   function aturMode(hal, mode) {
     S.mode[hal] = mode;
@@ -878,6 +876,7 @@
   }
   document.addEventListener('click', function (e) {
     const baru = e.target.closest('[data-baru]'); if (baru) { bukaFormBaru(baru.dataset.baru); return; }
+    const bd = e.target.closest('[data-baru-dari]'); if (bd) { pergi(bd.dataset.baruDari, { mode: 'form' }); bukaFormBaru(bd.dataset.baruDari); return; }
     const kd = e.target.closest('[data-ke-daftar]'); if (kd) { aturMode(kd.dataset.keDaftar, 'daftar'); return; }
     const bn = e.target.closest('[data-buka-nota]'); if (bn) { e.stopPropagation(); bukaNota(bn.dataset.bukaNota, bn.dataset.nomor); return; }
     const c2 = e.target.closest('[data-cetak-dua]');
@@ -963,7 +962,7 @@
     x.kolom.forEach(function (i, pos) { if (x.uang.indexOf(i + 1) !== -1 || cfg.uang.indexOf(x.header[i]) !== -1) kanan.push(pos + (cfg.jenis ? 1 : 0)); });
     $('tabel-' + kunci).innerHTML = (hasil.length ? '<div class="tabel-daftar">' + tabel(header, tampil.map(function (b) {
       const sel = [];
-      if (cfg.jenis) sel.push(b.nomor ? '<button class="tombol-mata" type="button" title="Lihat ' + esc(b.nomor) + '" data-buka-nota="' + cfg.jenis + '" data-nomor="' + esc(b.nomor) + '">👁</button>' : '');
+      if (cfg.jenis) sel.push(b.nomor ? '<button class="tombol-mata" type="button" title="Lihat ' + esc(b.nomor) + '" data-buka-nota="' + cfg.jenis + '" data-nomor="' + esc(b.nomor) + '">' + IKON_LIHAT + '</button>' : '');
       x.kolom.forEach(function (i) {
         const v = b.v0[i], h = x.header[i];
         if (cfg.sheet === 'DISKON' && h === 'TOTAL' && typeof v === 'number') { sel.push(persen(v)); return; }
@@ -1073,10 +1072,21 @@
     if (isi.jenis === 'POK') {
       const t = tabelNota(D.HISTORY_PO_KELUAR), r = t.rows[0] || [];
       const sup = t.rows.map(function (x) { return t.v(x, 'SUPPLIER'); }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(', ');
+      const noCetak = nomorPOCetak(isi.nomor);
       const cetak = d.versi ? '' : tombolCetak('POK', isi.nomor, 'PDF PO keluar');
-      return lama + ringkasNota([['No PO keluar', esc(isi.nomor)], ['Tanggal', esc(t.v(r, 'TGL'))], ['Supplier', esc(sup || '—')], ['Qty', jml(t, 'JUMLAH') + ' (diterima ' + jml(t, 'QTY TERKIRIM') + ')']], cetak) +
-        kertas('PO KELUAR', 'Supplier : <b>' + esc(sup || '—') + '</b>', baris2('Tgl', t.v(r, 'TGL')) + baris2('No PO', isi.nomor),
-          ['NO', 'NAMA TOKO', 'NAMA BARANG', 'JUMLAH', 'KETERANGAN', 'DITERIMA', 'SUPPLIER'], t.rows.map(function (x, i) { return [i + 1, esc(t.v(x, 'NAMA TOKO')), esc(t.v(x, 'NAMA BARANG')), esc(t.v(x, 'JUMLAH')), esc(t.v(x, 'KETERANGAN')), esc(t.v(x, 'QTY TERKIRIM')), esc(t.v(x, 'SUPPLIER'))]; }), [3, 5], '', []);
+      // sama dengan form PO_KELUAR di spreadsheet: nomor urut per toko, nama toko hanya di baris pertama tokonya
+      let no = 0, tokoLalu = null;
+      const baris = t.rows.map(function (x) {
+        const toko = String(t.v(x, 'NAMA TOKO') || '').trim();
+        const baru = toko !== tokoLalu; tokoLalu = toko; if (baru) no++;
+        return [baru ? no : '', baru ? esc(toko) : '', esc(t.v(x, 'NAMA BARANG')), esc(t.v(x, 'JUMLAH')), esc(t.v(x, 'KETERANGAN')), esc(t.v(x, 'SUPPLIER'))];
+      });
+      return lama + ringkasNota([['No PO keluar', esc(isi.nomor), 'di cetakan: ' + esc(noCetak)], ['Tanggal', esc(t.v(r, 'TGL'))], ['Supplier', esc(sup || '—')], ['Qty', jml(t, 'JUMLAH') + ' (diterima ' + jml(t, 'QTY TERKIRIM') + ')']], cetak) +
+        '<div class="kertas kertas-pok"><div class="pok-kepala"><div class="logo-mark pok-logo"></div><div class="pok-judul"><b>CV SANFELO LIVING</b><i>PONDOK BLIMBING INDAH BLOK A6 NO.9 MALANG</i></div></div>' +
+        '<div class="pok-info"><span>NO. PO:&nbsp; <b>' + esc(noCetak) + '</b></span><span>TGL:&nbsp; <b>' + esc(t.v(r, 'TGL')) + '</b></span></div>' +
+        '<table><thead><tr><th class="tengah">NO</th><th class="tengah">NAMA TOKO</th><th class="tengah">NAMA BARANG</th><th class="tengah">JUMLAH</th><th class="tengah">KETERANGAN</th><th class="tengah">SUPPLIER</th></tr></thead><tbody>' +
+        baris.map(function (x) { return '<tr><td class="tengah">' + x[0] + '</td><td>' + x[1] + '</td><td>' + x[2] + '</td><td class="tengah">' + x[3] + '</td><td>' + x[4] + '</td><td>' + x[5] + '</td></tr>'; }).join('') +
+        '<tr><td></td><td></td><td>TOTAL QTY</td><td class="tengah">' + jml(t, 'JUMLAH') + '</td><td></td><td></td></tr></tbody></table></div>';
     }
     if (isi.jenis === 'SPR') {
       const t = tabelNota(D.SPAREPART), r = t.rows[0] || [];
@@ -1103,6 +1113,8 @@
     }
     return '';
   }
+  // nomor PO keluar di cetakan untuk pabrik: #2026-096 -> T-096 (SANFELO) / N-096 (SL)
+  function nomorPOCetak(no) { const m = String(no || '').trim().match(/^#?\d{4}-(\d+)$/); return m ? (K.merek === 'SL' ? 'N' : 'T') + '-' + m[1] : String(no || ''); }
   function namaVersi(v) { return v === 1 ? 'Asli' : 'Revisi ' + (v - 1); }
   function gambarRiwayat(d) {
     const list = d.revisi || [];

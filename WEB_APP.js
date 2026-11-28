@@ -528,8 +528,6 @@ function webDashboard_() {
     .filter(function (x) { return x.status === 'LOCKED'; })
     .map(function (x) { return x.customer; });
 
-  let ringkasPO = null;
-  try { ringkasPO = webRingkasPO_(); } catch (err) { Logger.log('ringkasPO: ' + err); } // WEB_DOKUMEN.js
 
   return {
     bulanIni: bulanIni,
@@ -544,7 +542,6 @@ function webDashboard_() {
     transaksiBulanIni: jmlBulanIni,
     nilaiBulanIni: nilaiBulanIni,
     transaksiTerbaru: terbaru,
-    ringkasPO: ringkasPO,
     tokoLocked: locked
   };
 }
