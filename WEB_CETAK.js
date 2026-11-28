@@ -202,7 +202,7 @@ function webCetakSparepart_(inv, ss, jenis, nomor, a) {
   if (jenis === 'INV_SPR' && a.tandaiCetak && !WEB_LATIHAN_) {
     tercetak = inv.konfirmasiSiapCetak({ sheetName: 'INV_SPR', noInv: String(spr[1]).trim(), mode: 'cetak', alasan: String(a.alasan || '') }).pesan;
   }
-  const akhir = jenis === 'SJ_SPR' ? webBarisAkhirNota_(inv, sh, 'Yang Menyerahkan,', 9, 3, 20, 8) : webBarisAkhirNota_(inv, sh, 'Accounting,', 11, 8, Math.max(sh.getLastRow(), 27), 9);
+  const akhir = jenis === 'SJ_SPR' ? webBarisAkhirNota_(inv, sh, 'Yang Menyerahkan,', 9, 3, 20, 8) : webBarisAkhirNota_(inv, sh, 'Accounting,', 11, 8, Math.max(webBarisIsiTerakhir_(sh, 9, 1), 27), 9);
   const r = webEksporPdf_(ss, sh, akhir, jenis === 'SJ_SPR' ? 8 : 9, String(jenis === 'SJ_SPR' ? spr[0] : spr[1]).trim(), 'LAIN');
   r.tercetak = tercetak;
   return r;
@@ -240,7 +240,7 @@ function webCetakPalet_(inv, ss, ref) {
   }
   SpreadsheetApp.flush();
   const sh = ss.getSheetByName('INVOICE PALET');
-  return webEksporPdf_(ss, sh, sh.getLastRow(), 7, 'INVOICE PALET ' + ref + ' - ' + rows[0][5], 'LAIN');
+  return webEksporPdf_(ss, sh, webBarisIsiTerakhir_(sh, 7, 1), 7, 'INVOICE PALET ' + ref + ' - ' + rows[0][5], 'LAIN');
 }
 
 // PO Keluar: isi form PO_KELUAR dengan isiPOKeluarDariHistory_ lalu export seperti exportPOKeluarPDF
@@ -252,6 +252,55 @@ function webCetakPOKeluar_(inv, ss, poNo) {
   sh.getRange('B4').setValue(poNo);
   if (tglRow && tglRow[1]) sh.getRange('E4').setValue(tglRow[1]);
   inv.isiPOKeluarDariHistory_(sh, items);
+  webRapikanKepalaPOK_(sh, poNo, tglRow && tglRow[1]); // cetakan untuk pabrik: T-xxx, kepala rapi
   SpreadsheetApp.flush();
-  return webEksporPdf_(ss, sh, sh.getLastRow(), 6, 'PO KELUAR - ' + poNo, 'POK', 0.3);
+  // sampai baris TOTAL QTY (dulu sampai baris terakhir sheet -> banyak halaman kosong)
+  return webEksporPdf_(ss, sh, webBarisAkhirPOK_(sh, items.length), 6, 'PO KELUAR - ' + webNomorPOCetak_(poNo), 'POK', 0.3);
+}
+
+
+const WEB_AWALAN_PO_CETAK_ = 'T'; // SANFELO: #2026 -> T di cetakan PO keluar
+
+/* ---------------- batas cetak & PO keluar untuk pabrik ---------------- */
+
+// Baris terakhir yang benar-benar berisi teks (dibaca dari atas). Berhenti setelah 15 baris kosong
+// berturut-turut, supaya sisa isian jauh di bawah template tidak ikut tercetak (halaman kosong).
+function webBarisIsiTerakhir_(sh, kolom, mulai) {
+  const m = mulai || 1;
+  const n = Math.max(1, sh.getLastRow() - m + 1);
+  const v = sh.getRange(m, 1, n, kolom).getDisplayValues();
+  let akhir = m, kosong = 0;
+  for (let i = 0; i < v.length; i++) {
+    if (v[i].some(function (x) { return String(x).trim() !== ''; })) { akhir = m + i; kosong = 0; }
+    else if (++kosong >= 15) break;
+  }
+  return akhir;
+}
+
+// PO_KELUAR: nota selesai di baris "TOTAL QTY" (kolom C)
+function webBarisAkhirPOK_(sh, jumlahItem) {
+  const batas = Math.min(sh.getLastRow(), 7 + (jumlahItem || 0) + 60);
+  const v = sh.getRange(7, 3, Math.max(1, batas - 6), 1).getDisplayValues();
+  for (let i = 0; i < v.length; i++) if (String(v[i][0]).trim().toUpperCase() === 'TOTAL QTY') return 7 + i;
+  return webBarisIsiTerakhir_(sh, 6, 1);
+}
+
+// nomor PO di cetakan untuk pabrik: #2026-096 -> T-096 (SANFELO) / N-096 (SL). Data tidak berubah.
+function webNomorPOCetak_(poNo) {
+  const m = String(poNo || '').trim().match(/^#?\d{4}-(\d+)$/);
+  return m ? WEB_AWALAN_PO_CETAK_ + '-' + m[1] : String(poNo || '').trim();
+}
+
+// kepala PO keluar (hanya di file cetak web): judul & alamat rata kanan, NO. PO tetap kiri, TGL rata kanan
+function webRapikanKepalaPOK_(sh, poNo, tgl) {
+  [1, 2].forEach(function (r) {
+    sh.getRange(r, 3, 1, 4).breakApart();
+    sh.getRange(r, 3, 1, 4).merge().setHorizontalAlignment('right');
+  });
+  sh.getRange('B4').setValue(webNomorPOCetak_(poNo)).setHorizontalAlignment('left');
+  const teksTgl = tgl instanceof Date ? Utilities.formatDate(tgl, WEB_TZ, 'dd/MM/yyyy') : String(sh.getRange('E4').getDisplayValue() || '').trim();
+  sh.getRange('D4').clearContent();
+  sh.getRange('E4:F4').breakApart();
+  sh.getRange('E4:F4').clearContent().merge();
+  sh.getRange('E4').setNumberFormat('@').setValue('TGL:  ' + teksTgl).setHorizontalAlignment('right');
 }
