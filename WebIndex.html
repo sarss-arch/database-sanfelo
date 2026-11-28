@@ -134,7 +134,7 @@
         <div class="kartu">
           <div class="kartu-kepala"><h4>1. Pilih PO</h4></div>
           <div id="sjModeEdit"></div>
-          <div class="filter"><label class="isi">Cari PO / toko<input id="sjCari" placeholder="#2026-298 atau nama toko"></label><button class="tombol gelap" id="sjTombolCari" type="button">Cari</button></div>
+          <div class="filter"><label class="isi">Cari PO / toko<input id="sjCari" placeholder="ketik no PO atau nama toko…"></label></div>
           <div id="sjDaftarPO" style="margin-top:12px"></div>
           <div class="aksi-bawah"><span id="sjPOdipilih" class="redup" style="align-self:center"></span><button class="tombol utama" id="sjMuat" type="button">Muat barang</button></div>
         </div>
@@ -201,7 +201,7 @@
         <div class="kartu">
           <div class="kartu-kepala"><h4>Biaya Tambah (Ekspedisi / Palet)</h4></div>
           <div class="form-grid tiga">
-            <label>No Invoice (referensi)<div class="baris-input"><input id="bRef" placeholder="INV-2026-10-001"><button class="tombol" id="bCari" type="button">Cari</button></div></label>
+            <label>No Invoice (referensi)<input id="bRef" placeholder="ketik No Invoice, mis. INV-2026-10-001"></label>
             <label>Jenis biaya<select id="bJenis"><option>PALET</option><option>EKSPEDISI</option></select></label>
             <label>Tanggal<input type="date" id="bTgl"></label>
             <label>Nama toko<input id="bToko"></label>
@@ -279,7 +279,7 @@
         <div data-mode="form" class="tersembunyi">
         <div class="kartu">
           <div class="kartu-kepala"><h4>PO Keluar</h4><span class="redup">Satu nomor PO per tanggal (sama dengan inventory)</span></div>
-          <div class="filter"><label>Tanggal PO keluar<input type="date" id="pokTgl"></label><button class="tombol gelap" id="pokMuat" type="button">Muat</button><b id="pokNomor" style="align-self:center"></b></div>
+          <div class="filter"><label>Tanggal PO keluar<input type="date" id="pokTgl"></label><button class="tombol gelap tersembunyi" id="pokMuat" type="button">Muat</button><b id="pokNomor" style="align-self:center"></b></div>
           <div id="pokInfo" style="margin-top:8px"></div>
         </div>
         <div class="kartu">
@@ -311,9 +311,9 @@
             <div class="form-grid"><label>No invoice<input id="btNoInv" placeholder="INV-2026-10-001"></label><label>Alasan<input id="btAlasan"></label></div>
             <div class="aksi-bawah"><button class="tombol" id="btSimpan" type="button">Batalkan tanda tercetak</button></div></div>
           <div class="kartu"><h4>📥 Catat susulan invoice tercetak</h4>
-            <div class="filter"><label>Bulan<input type="month" id="susBulan"></label><button class="tombol" id="susCari" type="button">Cari</button></div><div id="susHasil" style="margin-top:10px"></div></div>
+            <div class="filter"><label>Bulan<input type="month" id="susBulan"></label><button class="tombol tersembunyi" id="susCari" type="button">Cari</button></div><div id="susHasil" style="margin-top:10px"></div></div>
           <div class="kartu"><h4>✏️ Ubah status transaksi</h4>
-            <div class="filter"><label class="isi">No SJ<input id="usNoSJ" placeholder="SJ-2026-11-001"></label><button class="tombol" id="usCari" type="button">Cari</button></div><div id="usHasil" style="margin-top:10px"></div></div>
+            <div class="filter"><label class="isi">No SJ<input id="usNoSJ" placeholder="SJ-2026-11-001"></label><button class="tombol tersembunyi" id="usCari" type="button">Cari</button></div><div id="usHasil" style="margin-top:10px"></div></div>
         </div>
         <div class="kartu"><div class="kartu-kepala"><h4>👥 Grouping HUTANG (SJ beli yang belum punya No Invoice supplier)</h4><button class="tombol kecil" id="grMuat" type="button">Muat</button></div><div id="grDaftar"></div>
           <div class="form-grid tiga"><label>No invoice supplier<input id="grNoInv"></label><label>Jatuh tempo<input type="date" id="grTempo"></label><label>Bulan transaksi<input type="month" id="grBulan"></label></div>
@@ -322,7 +322,7 @@
 
       <!-- LAPORAN -->
       <section class="hal tersembunyi" id="hal-laporan">
-        <div class="kartu filter"><label>Bulan<select id="lapBulan"></select></label><button class="tombol gelap" id="lapLihat" type="button">Tampilkan</button></div>
+        <div class="kartu filter"><label>Bulan<select id="lapBulan"></select></label></div>
         <div class="grid-stat" id="lapStat"></div>
         <div class="kartu"><div class="kartu-kepala"><h4>Invoice tercetak</h4></div><div id="lapCetak"></div></div>
         <div class="grid-dua">
@@ -339,16 +339,7 @@
 
       <!-- PIUTANG -->
       <section class="hal tersembunyi" id="hal-piutang">
-        <div class="kartu filter">
-          <label class="isi">Cari invoice / toko<input id="cariPiutang" placeholder="INV-2026-10-001 atau nama toko"></label>
-          <button class="tombol gelap" id="tombolCariPiutang">Cari</button>
-          <div class="pemisah"></div>
-          <label class="isi">Buka No Invoice (termasuk yang sudah lunas)<input id="noInvLangsung" placeholder="INV-2026-07-001"></label>
-          <button class="tombol" id="tombolBukaInv">Buka</button>
-        </div>
-        <div class="ringkas" id="ringkasPiutang"></div>
-        <div class="kartu"><div id="tabelPiutang"></div></div>
-        <div class="kartu" id="daftar-penjualan"></div>
+        <div class="kartu" id="daftar-piutang"></div>
       </section>
 
       <!-- HUTANG -->
@@ -377,7 +368,7 @@
       <!-- AKTIVITAS -->
       <section class="hal tersembunyi" id="hal-aktivitas">
         <div class="kartu">
-          <div class="filter"><label>Admin<select id="logAdmin"><option value="">Semua admin</option></select></label><label>Cari<input id="logCari" placeholder="mis. INV-2026, PETTY CASH, HAPUS"></label><button class="tombol gelap" id="logTampil" type="button">Tampilkan</button></div>
+          <div class="filter"><label>Admin<select id="logAdmin"><option value="">Semua admin</option></select></label><label>Cari<input id="logCari" placeholder="mis. INV-2026, PETTY CASH, HAPUS"></label></div>
           <p class="redup">Setiap login, simpan, ubah, hapus & cetak dari web tercatat dengan nama admin yang login (sheet LOG_WEB).</p>
           <div id="tabelLog"></div>
         </div>
