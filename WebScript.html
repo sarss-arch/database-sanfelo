@@ -69,7 +69,7 @@
   const CACHE_LIHAT = ['dashboard', 'stok', 'laporan', 'daftarPiutang', 'daftarKas', 'daftarData', 'logWeb', 'daftarAdmin', 'semuaData'];
   const AKSI_BACA = ['dashboard', 'daftarData', 'daftarPiutang', 'cariInvoice', 'supplierHutang', 'daftarPBHutang', 'bulanHutang', 'detailInvoice', 'logWeb', 'masterPO', 'hitungPO',
     'daftarPOTerbuka', 'muatPOSJ', 'pratinjauSJ', 'masterTT', 'muatPOKeluarTT', 'hitungTT', 'invoiceUntukBiaya', 'daftarPalet', 'detailPalet', 'pratinjauSparepart', 'stok', 'daftarKas',
-    'laporan', 'tempoTokoDaftar', 'susulanKandidat', 'statusSJ', 'groupingDaftar', 'poKeluarMuat', 'poKeluarDariPOMasuk', 'bukaSJ', 'bukaTT', 'bukaSpr', 'siapkanLatihan', 'daftarAdmin', 'versiData', 'cekHutang', 'bukaPO', 'semuaData', 'dokumen'];
+    'laporan', 'tempoTokoDaftar', 'susulanKandidat', 'statusSJ', 'groupingDaftar', 'poKeluarMuat', 'poKeluarDariPOMasuk', 'bukaSJ', 'bukaTT', 'bukaSpr', 'siapkanLatihan', 'daftarAdmin', 'versiData', 'cekHutang', 'bukaPO', 'semuaData', 'dokumen', 'nomorSJ', 'pdfHtml'];
   let CACHE = {};
   let SEDANG = {}; // permintaan baca yang sedang berjalan (tidak dikirim dua kali)
   let GEN = 0; // naik setiap simpanan dibuang/ditandai basi: hasil baca yang berangkat sebelumnya tidak dianggap baru
@@ -763,17 +763,24 @@
     const angka = function (n) { return Math.round(Number(n) || 0).toLocaleString('id-ID'); };
     const total = baris.reduce(function (s, b) { return s + (Number(b.jml) || 0); }, 0);
     const rek = rekeningSupplier(h.supplier);
-    $('areaCetak').innerHTML = '<div class="pengajuan-cetak"><table><thead><tr><th>NAMA SUPLIER</th><th>NO SJ</th><th>TGL</th><th>BULAN</th><th class="kanan">TOTAL<br>NETTO</th></tr></thead><tbody>' +
+    const isiPdf = '<table><thead><tr><th style="width:34%">NAMA SUPLIER</th><th style="width:22%">NO SJ</th><th style="width:12%">TGL</th><th style="width:14%">BULAN</th><th class="kanan putih">TOTAL<br>NETTO</th></tr></thead><tbody>' +
       baris.map(function (b) { return '<tr><td>' + esc(h.supplier) + '</td><td>' + esc(b.p.noSJ) + '</td><td class="kanan">' + esc(b.p.tglBeli) + '</td><td>' + esc(bulanTeks(b.p.tglBeli)) + '</td><td class="kanan">' + angka(b.jml) + '</td></tr>'; }).join('') +
       '<tr><td></td><td></td><td></td><td>TOTAL</td><td class="kanan"><b>' + angka(total) + '</b></td></tr>' +
       '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>' +
       '<tr><td><b>' + esc(rek ? rek[0] : 'BANK: (belum diatur)') + '</b></td><td></td><td></td><td></td><td></td></tr>' +
-      '<tr><td><b>' + esc(rek ? rek[1] : '-') + '</b></td><td></td><td></td><td></td><td></td></tr></tbody></table></div>';
+      '<tr><td><b>' + esc(rek ? rek[1] : '-') + '</b></td><td></td><td></td><td></td><td></td></tr></tbody></table>';
     if (!rek) toast('Rekening ' + h.supplier + ' belum diatur, cetakan tanpa nomor rekening.');
-    document.body.classList.add('cetak-rekap');
-    const selesai = function () { document.body.classList.remove('cetak-rekap'); window.removeEventListener('afterprint', selesai); };
-    window.addEventListener('afterprint', selesai);
-    setTimeout(function () { window.print(); setTimeout(selesai, 1500); }, 50);
+    unduhHtmlPdf('PENGAJUAN ' + h.supplier + ' ' + bulanTeks('01/' + String(h.bulan).split('-').reverse().join('/')), isiPdf, CSS_PENGAJUAN);
+  }
+  // PDF dibuat di server dari HTML lalu langsung diunduh (tanpa dialog cetak)
+  const CSS_PENGAJUAN = 'body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#000}table{width:100%;border-collapse:collapse}' +
+    'th,td{border:1.5px solid #333;padding:5px 8px;text-align:left;font-size:13px;height:20px}th{background:#d9d9d9;font-size:16px;font-weight:bold;vertical-align:bottom}' +
+    'th.putih{background:#ffffff}.kanan{text-align:right}';
+  const CSS_REKAP = 'body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#000}h2{margin:4px 0;font-size:16px}.kop{margin-bottom:10px;font-size:11px}' +
+    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:4px 6px;text-align:left;font-size:10px}th{background:#e6e6e6}.kanan{text-align:right}';
+  function unduhHtmlPdf(nama, isi, css) {
+    const html = '<html><head><meta charset="utf-8"><style>' + css + '</style></head><body>' + isi + '</body></html>';
+    return api('pdfHtml', { nama: nama, html: html }, 'Membuat PDF…').then(function (h) { unduhPdf(h.nama, h.pdf); toast('PDF diunduh: ' + h.nama); }).catch(gagal);
   }
   function bayarPB() {
     const h = S.pb;
@@ -1362,14 +1369,11 @@
       return jenis === 'INVOICE' ? [i + 1, esc(d.sub2), esc(d.tgl), esc(d.pihak), esc(d.ref || '-'), rp(d.total), rp(d.sisa), esc(d.status)] : [i + 1, esc(d.nomor), esc(d.tgl), esc(d.pihak), esc(d.ref || '-'), esc(d.sub), esc(d.status2 || '')];
     });
     const total = hasil.reduce(function (s, d) { return s + (d.total || 0); }, 0), sisa = hasil.reduce(function (s, d) { return s + (d.sisa || 0); }, 0);
-    $('areaCetak').innerHTML = '<div class="rekap-cetak"><div class="rekap-kop"><b>' + esc(K.merekPanjang || K.merek) + '</b><h2>' + judul + '</h2><div>' + esc(saring) + ' · ' + hasil.length + ' nota · dicetak ' + esc(new Date().toLocaleDateString('id-ID')) + '</div></div>' +
+    const isiPdf = '<div class="kop"><b>' + esc(K.merekPanjang || K.merek) + '</b><h2>' + judul + '</h2><div>' + esc(saring) + ' · ' + hasil.length + ' nota · dicetak ' + esc(new Date().toLocaleDateString('id-ID')) + '</div></div>' +
       '<table><thead><tr>' + kepala.map(function (k, i) { return '<th' + (jenis === 'INVOICE' && (i === 5 || i === 6) ? ' class="kanan"' : '') + '>' + k + '</th>'; }).join('') + '</tr></thead><tbody>' +
       isi.map(function (r) { return '<tr>' + r.map(function (v, i) { return '<td' + (jenis === 'INVOICE' && (i === 5 || i === 6) ? ' class="kanan"' : '') + '>' + v + '</td>'; }).join('') + '</tr>'; }).join('') +
-      (jenis === 'INVOICE' ? '<tr><td colspan="5" class="kanan"><b>Total</b></td><td class="kanan"><b>' + rp(total) + '</b></td><td class="kanan"><b>' + rp(sisa) + '</b></td><td></td></tr>' : '') + '</tbody></table></div>';
-    document.body.classList.add('cetak-rekap');
-    const selesai = function () { document.body.classList.remove('cetak-rekap'); window.removeEventListener('afterprint', selesai); };
-    window.addEventListener('afterprint', selesai);
-    setTimeout(function () { window.print(); setTimeout(selesai, 1500); }, 50);
+      (jenis === 'INVOICE' ? '<tr><td colspan="5" class="kanan"><b>Total</b></td><td class="kanan"><b>' + rp(total) + '</b></td><td class="kanan"><b>' + rp(sisa) + '</b></td><td></td></tr>' : '') + '</tbody></table>';
+    unduhHtmlPdf(judul + ' ' + (b ? namaBulan(b) : 'semua bulan'), isiPdf, CSS_REKAP);
   }
 
   // ---------- detail invoice palet / ekspedisi (seperti nota lain, bukan popup) ----------

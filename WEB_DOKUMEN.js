@@ -244,3 +244,15 @@ function webNamaAdmin() {
     return ia - ib || (a < b ? -1 : 1);
   });
 }
+
+/**
+ * PDF dari HTML sederhana buatan web (cetak pengajuan hutang, rekap invoice / SJ), langsung diunduh
+ * seperti PDF nota lain. Tidak membaca / menulis sheet dan tidak disimpan ke Drive.
+ */
+function webPdfHtml_(a) {
+  const html = String(a.html || '');
+  if (!html || html.length > 500000) throw new Error('Isi PDF kosong atau terlalu besar.');
+  const nama = String(a.nama || 'dokumen').replace(/[\\\/:*?"<>|]/g, '').trim().slice(0, 120) || 'dokumen';
+  const pdf = Utilities.newBlob(html, 'text/html', 'dokumen.html').getAs('application/pdf');
+  return { nama: (WEB_LATIHAN_ ? 'LATIHAN - ' : '') + nama + '.pdf', pdf: Utilities.base64Encode(pdf.getBytes()) };
+}
