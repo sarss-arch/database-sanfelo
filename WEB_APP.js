@@ -120,6 +120,8 @@ const WEB_API_ = {
   logWeb: function (a) { return webBacaLog_(a); },
   daftarAdmin: function () { return webDaftarAdmin_(); },
   versiData: function () { return webVersiData_(); },
+  semuaData: function (a) { return webDaftarData_({ sheet: a.sheet, semua: true }); },
+  dokumen: function (a) { return webDokumen_(a); },
   cekHutang: function () { return { tanpaBulan: [], yatim: [], sisaAneh: [] }; }, // pemeriksaan HUTANG baru ada di web SL
   aturPinAdmin: function (a, admin) { return webAturPinAdmin_(a, admin); },
   // WEB_KAS_CRUD.js: ubah / hapus baris petty cash & buku bank
@@ -526,6 +528,9 @@ function webDashboard_() {
     .filter(function (x) { return x.status === 'LOCKED'; })
     .map(function (x) { return x.customer; });
 
+  let ringkasPO = null;
+  try { ringkasPO = webRingkasPO_(); } catch (err) { Logger.log('ringkasPO: ' + err); } // WEB_DOKUMEN.js
+
   return {
     bulanIni: bulanIni,
     totalPiutang: totalPiutang,
@@ -539,6 +544,7 @@ function webDashboard_() {
     transaksiBulanIni: jmlBulanIni,
     nilaiBulanIni: nilaiBulanIni,
     transaksiTerbaru: terbaru,
+    ringkasPO: ringkasPO,
     tokoLocked: locked
   };
 }
@@ -908,8 +914,8 @@ function webDaftarData_(a) {
   if (!urutSheet) baris.reverse();
 
   const total = baris.length;
-  const per = Math.min(Number(a.per) || 50, 200);
-  const halaman = Math.max(1, Number(a.halaman) || 1);
+  const per = a.semua ? Math.max(1, total) : Math.min(Number(a.per) || 50, 200); // semua: halaman daftar web (cari & saring di browser)
+  const halaman = a.semua ? 1 : Math.max(1, Number(a.halaman) || 1);
   baris = baris.slice((halaman - 1) * per, halaman * per);
 
   const sembunyi = cfg.sembunyi || [];

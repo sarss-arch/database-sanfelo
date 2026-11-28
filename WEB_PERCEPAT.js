@@ -26,7 +26,8 @@ const WEB_CACHE_TTL_ = {
   bulanHutang: 900,
   daftarPalet: 300,
   laporan: 300,
-  groupingDaftar: 300
+  groupingDaftar: 300,
+  semuaData: 120
 };
 
 // aksi yang hanya membaca (tidak menaikkan versi data). Aksi lain dianggap menulis.
@@ -36,11 +37,17 @@ const WEB_AKSI_BACA_SAJA_ = {
   pratinjauSJ: 1, masterTT: 1, muatPOKeluarTT: 1, hitungTT: 1, invoiceUntukBiaya: 1, daftarPalet: 1,
   detailPalet: 1, pratinjauSparepart: 1, stok: 1, daftarKas: 1, laporan: 1, tempoTokoDaftar: 1,
   susulanKandidat: 1, statusSJ: 1, groupingDaftar: 1, poKeluarMuat: 1, poKeluarDariPOMasuk: 1,
-  bukaSJ: 1, bukaTT: 1, bukaSpr: 1, siapkanLatihan: 1, daftarAdmin: 1, cekHutang: 1, versiData: 1, bukaPO: 1
+  bukaSJ: 1, bukaTT: 1, bukaSpr: 1, siapkanLatihan: 1, daftarAdmin: 1, cekHutang: 1, versiData: 1, bukaPO: 1, semuaData: 1, dokumen: 1
 };
 
 const WEB_CACHE_POTONG_ = 90000; // batas 1 nilai CacheService = 100 KB
 const WEB_CACHE_MAKS_POTONG_ = 60;
+
+// menu "Sistem" (Alat & Perbaikan, Aktivitas) khusus akun ADMIN
+const WEB_AKSI_ADMIN_ = {
+  alat: 1, batalTercetak: 1, susulanKandidat: 1, susulanSimpan: 1, statusSJ: 1, ubahStatus: 1,
+  groupingDaftar: 1, groupingSimpan: 1, logWeb: 1, daftarAdmin: 1
+};
 
 var WEB_LOG_DICATAT_ = false; // true kalau aksi ini sudah menulis LOG_WEB sendiri
 
@@ -104,6 +111,7 @@ function webCacheSimpan_(kunci, data, ttl) {
  */
 function webJalankanAksi_(aksi, fn, args, admin) {
   WEB_LOG_DICATAT_ = false;
+  if (WEB_AKSI_ADMIN_[aksi] && admin !== 'ADMIN') throw new Error('Menu ini khusus akun ADMIN.');
   const ttl = WEB_LATIHAN_ ? 0 : WEB_CACHE_TTL_[aksi];
   if (ttl) {
     let kunci = null;
@@ -122,7 +130,9 @@ function webJalankanAksi_(aksi, fn, args, admin) {
   }
   const tulis = !WEB_AKSI_BACA_SAJA_[aksi];
   try {
+    if (tulis) webRevisiSebelum_(aksi, args, admin); // WEB_DOKUMEN.js: nota lama dicatat dulu sebagai "Asli"
     const hasil = fn(args, admin);
+    if (tulis) webRevisiSesudah_(aksi, args, hasil, admin); // salinan isi nota sesudah disimpan
     // jejak admin: aksi tulis yang belum mencatat sendiri tetap masuk LOG_WEB
     if (tulis && !WEB_LOG_DICATAT_ && !(['hapusCustomer', 'ubahCustomer', 'gantiCustomerInvoice'].indexOf(aksi) !== -1 && !args.yakin)) webCatatLog_(admin, String(aksi).toUpperCase(), webRingkasArgs_(args));
     return hasil;

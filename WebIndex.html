@@ -17,9 +17,11 @@
     <form class="kartu-login" id="formLogin" autocomplete="off">
       <div class="logo-full"></div>
       <h1><span class="merek-nama">SANFELO</span> Admin</h1>
-      <p class="redup">Masuk dengan nama & PIN admin</p>
-      <label>Nama admin<input id="loginNama" required placeholder="NUR / SILVA / ADMIN" autocapitalize="characters"></label>
+      <p class="redup">Pilih nama, lalu masukkan PIN</p>
+      <div class="pilih-nama" id="loginPilihNama"></div>
+      <label id="loginNamaBungkus">Nama admin<input id="loginNama" required placeholder="NUR / SILVA / ADMIN" autocapitalize="characters"></label>
       <label>PIN<input id="loginPin" type="password" inputmode="numeric" required placeholder="••••••"></label>
+      <label class="cek-kecil tersembunyi" id="loginLatihanBungkus"><input type="checkbox" id="loginLatihan"> Mode latihan</label>
       <div id="loginPesan" class="pesan-error"></div>
       <button class="tombol utama lebar" type="submit" id="tombolLogin">Masuk</button>
     </form>
@@ -47,13 +49,21 @@
         <a data-hal="kas" data-fitur="kas"><span class="ik">₨</span>Petty Cash &amp; Buku Bank</a>
         <div class="nav-judul">Lihat</div>
         <a data-hal="invoice"><span class="ik">▤</span>Detail Invoice</a>
-        <a data-hal="cetak" data-fitur="cetak"><span class="ik">⎙</span>Cetak Nota (PDF)</a>
         <a data-hal="laporan" data-fitur="laporan"><span class="ik">◔</span>Laporan Invoice</a>
         <a data-hal="stok" data-fitur="stok"><span class="ik">▥</span>Stok Barang</a>
-        <a data-hal="data"><span class="ik">☰</span>Data</a>
-        <a data-hal="alat" data-fitur="alat"><span class="ik">⚒</span>Alat &amp; Perbaikan</a>
-        <a data-hal="aktivitas"><span class="ik">⟲</span>Aktivitas</a>
+        <div class="nav-judul">Data master</div>
+        <a data-hal="produk"><span class="ik">▣</span>Produk</a>
+        <a data-hal="customer"><span class="ik">☺</span>Customer</a>
+        <div class="nav-judul khusus-admin">Sistem</div>
+        <a data-hal="alat" data-fitur="alat" class="khusus-admin"><span class="ik">⚒</span>Alat &amp; Perbaikan</a>
+        <a data-hal="aktivitas" class="khusus-admin"><span class="ik">⟲</span>Aktivitas</a>
       </nav>
+      <div class="panel-akun">
+        <div class="akun-baris"><div class="akun-avatar" id="akunAvatar">A</div><div class="akun-info"><b id="namaAdmin"></b><small id="akunMode">Data asli</small></div></div>
+        <div class="akun-tgl">Hari ini <b id="tglHariIni"></b></div>
+        <label class="cek-kecil" id="chipLatihan" data-fitur="latihan" title="Coba semua alur (termasuk cetak) di file latihan, data asli tidak berubah"><input type="checkbox" id="modeLatihan"> Mode latihan</label>
+        <div class="akun-tombol"><button class="tombol kecil" id="tombolSegarkan" type="button" title="Ambil ulang data terbaru dari spreadsheet">↻ Muat ulang</button><button class="tombol kecil" id="tombolKeluar" type="button">Keluar</button></div>
+      </div>
     </aside>
 
     <main class="utama-isi">
@@ -63,11 +73,7 @@
           <div class="alis" id="alisHal">RINGKASAN</div>
           <h2 id="judulHal">Dashboard</h2>
         </div>
-        <div class="kepala-kanan">
-          <label class="chip-latihan" id="chipLatihan" data-fitur="latihan" title="Coba semua alur (termasuk cetak) di file latihan, data asli tidak berubah"><input type="checkbox" id="modeLatihan"> Mode latihan</label>
-        <div class="chip-tgl"><small>Hari ini</small><b id="tglHariIni"></b></div>
-          <div class="chip-admin"><button class="tombol kecil" id="tombolSegarkan" type="button" title="Segarkan: ambil ulang data terbaru dari spreadsheet" aria-label="Segarkan">🔄</button><span id="namaAdmin"></span><button class="tombol kecil" id="tombolKeluar" type="button">Keluar</button></div>
-        </div>
+        <div class="kepala-kanan" id="aksiHal"></div>
       </header>
 
       <div class="banner-latihan tersembunyi" id="bannerLatihan">🧪 MODE LATIHAN — simpan &amp; cetak memakai FILE LATIHAN (salinan database per <b id="latihanWaktu">-</b>). Data asli tidak berubah &amp; nomor asli tidak terpakai. <button class="tombol kecil" id="latihanSegarkan" type="button">🔄 Segarkan data latihan</button></div>
@@ -81,23 +87,23 @@
             <h3>Halo, <span id="sapaAdmin"></span></h3>
             <p>Pantau piutang, hutang, dan transaksi terbaru dari satu halaman.</p>
           </div>
-          <div class="hero-aksi">
-            <button class="tombol putih" data-pergi="piutang">＋ Pembayaran Piutang</button>
-            <button class="tombol putih" data-pergi="hutang">＋ Bayar Hutang</button>
-          </div>
+          <div class="hero-po" id="heroPO"></div>
         </div>
         <div class="grid-stat" id="gridStat"></div>
         <div class="grid-dua">
           <div class="kartu"><div class="kartu-kepala"><h4>Piutang terlama</h4><a data-pergi="piutang">Lihat semua</a></div><div id="dashPiutang"></div></div>
           <div class="kartu"><div class="kartu-kepala"><h4>Hutang jatuh tempo terdekat</h4><a data-pergi="hutang">Bayar</a></div><div id="dashHutang"></div></div>
         </div>
-        <div class="kartu"><div class="kartu-kepala"><h4>Transaksi terbaru</h4><a data-pergi="data" data-sheet="TRANSAKSI">Semua transaksi</a></div><div id="dashTransaksi"></div></div>
+        <div class="kartu"><div class="kartu-kepala"><h4>Transaksi terbaru</h4><a data-pergi="sj">Semua transaksi</a></div><div id="dashTransaksi"></div></div>
       </section>
 
       <!-- PO MASUK -->
       <section class="hal tersembunyi" id="hal-po">
+        <div data-mode="daftar"><div class="kartu" id="daftar-po"></div></div>
+        <div data-mode="detail" class="tersembunyi" id="detail-po"></div>
+        <div data-mode="form" class="tersembunyi">
         <div class="kartu">
-          <div class="kartu-kepala"><h4>Data PO</h4><div class="baris-input"><input id="poNoEdit" placeholder="#2026-298" style="width:150px"><button class="tombol kecil" id="poBukaEdit" type="button">✏️ Ubah PO tersimpan</button></div></div>
+          <div class="kartu-kepala"><h4>Data PO</h4></div>
           <div id="poModeEdit"></div>
           <p class="redup" id="poNomorBaris" style="margin:0 0 8px">Nomor perkiraan: <b id="poNomor">-</b> (nomor pasti diambil saat simpan)</p>
           <div class="form-grid tiga">
@@ -117,12 +123,16 @@
           <div id="poPesan"></div>
           <div class="aksi-bawah"><b id="poTotal" style="align-self:center">Total Rp0</b><button class="tombol" id="poReset" type="button">Kosongkan</button><button class="tombol utama" id="poSimpan" type="button">Simpan PO Masuk</button></div>
         </div>
+              </div>
       </section>
 
       <!-- SURAT JALAN -->
       <section class="hal tersembunyi" id="hal-sj">
+        <div data-mode="daftar"><div class="kartu" id="daftar-sj"></div></div>
+        <div data-mode="detail" class="tersembunyi" id="detail-sj"></div>
+        <div data-mode="form" class="tersembunyi">
         <div class="kartu">
-          <div class="kartu-kepala"><h4>1. Pilih PO</h4><div class="baris-input"><input id="sjNoEdit" placeholder="SJ-2026-11-001" style="width:170px"><button class="tombol kecil" id="sjBukaEdit" type="button">✏️ Ubah SJ tersimpan</button></div></div>
+          <div class="kartu-kepala"><h4>1. Pilih PO</h4></div>
           <div id="sjModeEdit"></div>
           <div class="filter"><label class="isi">Cari PO / toko<input id="sjCari" placeholder="#2026-298 atau nama toko"></label><button class="tombol gelap" id="sjTombolCari" type="button">Cari</button></div>
           <div id="sjDaftarPO" style="margin-top:12px"></div>
@@ -152,12 +162,16 @@
             <div class="aksi-bawah"><b id="sjTotal" style="align-self:center"></b><button class="tombol" id="sjBatal" type="button">Batal</button><button class="tombol utama" id="sjSimpan" type="button">Simpan Surat Jalan &amp; Invoice</button></div>
           </div>
         </div>
+              </div>
       </section>
 
       <!-- TANDA TERIMA -->
       <section class="hal tersembunyi" id="hal-tt">
+        <div data-mode="daftar"><div class="kartu" id="daftar-tt"></div></div>
+        <div data-mode="detail" class="tersembunyi" id="detail-tt"></div>
+        <div data-mode="form" class="tersembunyi">
         <div class="kartu">
-          <div class="kartu-kepala"><h4>Data SJ Beli</h4><div class="baris-input"><input id="ttNoEdit" placeholder="PB-2026-11-001" style="width:160px"><button class="tombol kecil" id="ttBukaEdit" type="button">✏️ Ubah SJ Beli</button></div><span class="redup">No PB: <b id="ttNomor">-</b> (pasti saat simpan)</span></div>
+          <div class="kartu-kepala"><h4>Data SJ Beli</h4><span class="redup">No PB: <b id="ttNomor">-</b> (pasti saat simpan)</span></div>
           <div class="form-grid tiga">
             <label>Supplier<input id="ttSupplier" list="dlSupplier"></label><datalist id="dlSupplier"></datalist>
             <label>No SJ supplier<input id="ttNoSJ" placeholder="mis. 004/SJ/XI/2026"></label>
@@ -176,6 +190,7 @@
           <div class="aksi-bawah"><b id="ttTotal" style="align-self:center"></b><button class="tombol" id="ttReset" type="button">Kosongkan</button><button class="tombol utama" id="ttSimpan" type="button">Simpan SJ Beli</button></div>
         </div>
         <datalist id="dlKodeBarang"></datalist>
+              </div>
       </section>
 
       <!-- BIAYA TAMBAH -->
@@ -205,8 +220,11 @@
 
       <!-- SPAREPART -->
       <section class="hal tersembunyi" id="hal-spr">
+        <div data-mode="daftar"><div class="kartu" id="daftar-spr"></div></div>
+        <div data-mode="detail" class="tersembunyi" id="detail-spr"></div>
+        <div data-mode="form" class="tersembunyi">
         <div class="kartu">
-          <div class="kartu-kepala"><h4>SJ &amp; Invoice Sparepart</h4><div class="baris-input"><input id="sprNoEdit" placeholder="No SJ SPR lama…" title="Isi No SJ SPR yang sudah tersimpan untuk diubah, mis. SPR-2026-08-002" style="width:170px"><button class="tombol kecil" id="sprBukaEdit" type="button">✏️ Ubah</button></div><span class="redup">Nomor: <b id="sprNomor">-</b> (pasti saat simpan)</span></div>
+          <div class="kartu-kepala"><h4>SJ &amp; Invoice Sparepart</h4><span class="redup">Nomor: <b id="sprNomor">-</b> (pasti saat simpan)</span></div>
           <div class="form-grid tiga">
             <label class="penuh-2">Nama toko<input id="sprToko" list="dlCustomer"></label>
             <label>Method<select id="sprMethod"><option>CASH</option><option>CREDIT</option></select></label>
@@ -225,6 +243,7 @@
           <div id="sprPesan"></div>
           <div class="aksi-bawah"><b id="sprTotal" style="align-self:center"></b><button class="tombol utama" id="sprSimpan" type="button">Simpan Sparepart</button></div>
         </div>
+              </div>
       </section>
 
       <!-- KAS -->
@@ -242,6 +261,9 @@
 
       <!-- PO KELUAR -->
       <section class="hal tersembunyi" id="hal-pok">
+        <div data-mode="daftar"><div class="kartu" id="daftar-pok"></div></div>
+        <div data-mode="detail" class="tersembunyi" id="detail-pok"></div>
+        <div data-mode="form" class="tersembunyi">
         <div class="kartu">
           <div class="kartu-kepala"><h4>PO Keluar</h4><span class="redup">Satu nomor PO per tanggal (sama dengan inventory)</span></div>
           <div class="filter"><label>Tanggal PO keluar<input type="date" id="pokTgl"></label><button class="tombol gelap" id="pokMuat" type="button">Muat</button><b id="pokNomor" style="align-self:center"></b></div>
@@ -253,6 +275,7 @@
           <div id="pokPesan"></div>
           <div class="aksi-bawah"><b id="pokTotal" style="align-self:center"></b><button class="tombol" id="pokCetak" type="button">📦 Export PO Keluar (PDF)</button><button class="tombol utama" id="pokSimpan" type="button">Simpan PO Keluar</button></div>
         </div>
+              </div>
       </section>
 
       <!-- ALAT -->
@@ -284,20 +307,6 @@
           <div class="aksi-bawah"><button class="tombol utama" id="grSimpan" type="button">Simpan grouping</button></div></div>
       </section>
 
-      <!-- CETAK -->
-      <section class="hal tersembunyi" id="hal-cetak">
-        <div class="kartu">
-          <div class="kartu-kepala"><h4>Cetak nota (sama persis dengan nota di inventory)</h4></div>
-          <div class="form-grid tiga">
-            <label>Jenis nota<select id="cJenis"><option value="INVOICE">Invoice</option><option value="SJ">Surat Jalan</option><option value="INV_SPR">Invoice Sparepart</option><option value="SJ_SPR">SJ Sparepart</option><option value="TT">Tanda Terima Barang (No PB)</option><option value="PALET">Invoice Palet / Ekspedisi (No Invoice)</option><option value="POK">PO Keluar (No PO keluar)</option></select></label>
-            <label class="penuh-2">Nomor<input id="cNomor" placeholder="INV-2026-10-001 / SJ-2026-10-001 / SPRIN-... / PB-2026-11-001"></label>
-            <label class="penuh" id="cTandaiBungkus"><span><input type="checkbox" id="cTandai" style="width:auto"> Tandai SIAP CETAK (dicatat di LOG_INVOICE_CETAK, sama dengan menu 🖨️ SIAP CETAK Invoice)</span></label>
-          </div>
-          <div id="cPesanCetak"></div>
-          <div class="aksi-bawah"><button class="tombol utama" id="cBuat" type="button">Buat PDF</button></div>
-        </div>
-      </section>
-
       <!-- LAPORAN -->
       <section class="hal tersembunyi" id="hal-laporan">
         <div class="kartu filter"><label>Bulan<select id="lapBulan"></select></label><button class="tombol gelap" id="lapLihat" type="button">Tampilkan</button></div>
@@ -326,6 +335,7 @@
         </div>
         <div class="ringkas" id="ringkasPiutang"></div>
         <div class="kartu"><div id="tabelPiutang"></div></div>
+        <div class="kartu" id="daftar-penjualan"></div>
       </section>
 
       <!-- HUTANG -->
@@ -337,6 +347,7 @@
         </div>
         <div id="cekHutang"></div>
         <div id="areaPB"></div>
+        <div class="kartu" id="daftar-hutangsheet"></div>
       </section>
 
       <!-- INVOICE -->
@@ -347,17 +358,16 @@
         </div>
         <div id="areaInvoice"></div>
       </section>
+      <!-- PRODUK (DATA_BERSIH) -->
+      <section class="hal tersembunyi" id="hal-produk">
+        <div class="kartu" id="daftar-produk"></div>
+      </section>
 
-      <!-- DATA -->
-      <section class="hal tersembunyi" id="hal-data">
-        <div class="tab-data" id="tabData"></div>
-        <div class="kartu filter">
-          <label class="isi">Cari<input id="cariData" placeholder="ketik nama toko, no invoice, barang..."></label>
-          <label>Bulan<input id="bulanData" type="month"></label>
-          <button class="tombol gelap" id="tombolCariData">Terapkan</button>
-          <button class="tombol" id="tombolResetData">Reset</button>
-        </div>
-        <div class="kartu"><div id="tabelData"></div><div class="halaman" id="halamanData"></div></div>
+      <!-- CUSTOMER (DISKON) -->
+      <section class="hal tersembunyi" id="hal-customer">
+        <div class="kartu" id="daftar-customer"></div>
+        <div class="kartu"><div id="ringTempo"><div class="redup">Menghitung ringkasan tempo toko…</div></div></div>
+        <div class="kartu" id="daftar-tempo"></div>
       </section>
 
       <!-- AKTIVITAS -->
@@ -388,6 +398,7 @@
     </div>
   </div>
 
+  <div class="garis-muat tersembunyi" id="garisMuat"><span></span></div>
   <div class="memuat tersembunyi" id="memuat"><div class="putar"></div><span id="memuatTeks">Memuat…</span></div>
   <div class="toast" id="toast"></div>
 
