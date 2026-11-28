@@ -32,7 +32,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="merek">
         <div class="logo logo-mark"></div>
-        <div><b class="merek-nama">SANFELO</b><small>Admin</small></div>
+        <div><b class="merek-nama">SANFELO</b></div>
       </div>
       <nav>
         <div class="nav-judul">Ringkasan</div>
@@ -46,7 +46,8 @@
         <a data-hal="spr" data-fitur="spr"><span class="ik">⚙</span>Sparepart</a>
         <a data-hal="piutang"><span class="ik">↘</span>Pembayaran Piutang</a>
         <a data-hal="hutang"><span class="ik">↗</span>Bayar Hutang</a>
-        <a data-hal="kas" data-fitur="kas"><span class="ik">₨</span>Petty Cash &amp; Buku Bank</a>
+        <a data-hal="kas" data-kas="PETTY CASH" data-fitur="kas"><span class="ik">₨</span>Petty Cash</a>
+        <a data-hal="kas" data-kas="BUKU BANK" data-fitur="kas"><span class="ik">🏦</span>Buku Bank</a>
         <div class="nav-judul">Lihat</div>
         <a data-hal="invoice"><span class="ik">▤</span>Detail Invoice</a>
         <a data-hal="laporan" data-fitur="laporan"><span class="ik">◔</span>Laporan Invoice</a>
@@ -128,7 +129,7 @@
 
       <!-- SURAT JALAN -->
       <section class="hal tersembunyi" id="hal-sj">
-        <div data-mode="daftar"><div class="kartu" id="daftar-sj"></div></div>
+        <div data-mode="daftar"><div class="grid-stat tiga" id="sjStat"></div><div class="kartu" id="daftar-sj"></div></div>
         <div data-mode="detail" class="tersembunyi" id="detail-sj"></div>
         <div data-mode="form" class="tersembunyi">
         <div class="kartu">
@@ -195,6 +196,9 @@
 
       <!-- BIAYA TAMBAH -->
       <section class="hal tersembunyi" id="hal-biaya">
+        <div data-mode="daftar"><div class="kartu" id="daftar-biaya"></div></div>
+        <div data-mode="detail" class="tersembunyi" id="detail-biaya"></div>
+        <div data-mode="form" class="tersembunyi">
         <div class="kartu">
           <div class="kartu-kepala"><h4>Biaya Tambah (Ekspedisi / Palet)</h4></div>
           <div class="form-grid tiga">
@@ -215,7 +219,7 @@
           <div id="bInfo" class="redup"></div><div id="bPesan"></div>
           <div class="aksi-bawah"><b id="bTotal" style="align-self:center"></b><button class="tombol utama" id="bSimpan" type="button">Simpan Biaya</button></div>
         </div>
-        <div class="kartu"><div class="kartu-kepala"><h4>Invoice Palet / Ekspedisi</h4><span class="redup">klik untuk lihat & cetak</span></div><div id="bDaftar"></div></div>
+        </div>
       </section>
 
       <!-- SPAREPART -->
@@ -248,15 +252,25 @@
 
       <!-- KAS -->
       <section class="hal tersembunyi" id="hal-kas">
-        <div class="tab-data" id="kasTab"><button data-kas="PETTY CASH" class="aktif">PETTY CASH</button><button data-kas="BUKU BANK">BUKU BANK</button></div>
-        <div class="kartu">
-          <div class="kartu-kepala"><h4 id="kasJudul">Input Petty Cash</h4><b id="kasSaldo"></b></div>
-          <div class="form-grid"><label>Tanggal<input type="date" id="kasTgl"></label></div>
-          <div class="tabel-bungkus"><table><thead><tr><th>Kategori</th><th>Keterangan</th><th class="kanan">Nominal (Rp)</th><th></th></tr></thead><tbody id="kasBaris"></tbody></table></div>
-          <div id="kasPesan"></div>
-          <div class="aksi-bawah"><button class="tombol kecil" id="kasTambah" type="button">＋ Tambah baris</button><button class="tombol utama" id="kasSimpan" type="button">Simpan</button></div>
+        <div data-mode="daftar">
+          <div class="kartu">
+            <div class="kas-atas">
+              <div class="bulan-nav"><button class="tombol kecil" id="kasPrev" type="button" aria-label="Bulan sebelumnya">‹</button><select id="kasBulanPilih"></select><button class="tombol kecil" id="kasNext" type="button" aria-label="Bulan berikutnya">›</button><input type="month" id="kasBulan" class="tersembunyi"></div>
+              <div class="kas-ringkas" id="kasRingkas"></div>
+            </div>
+            <div class="daftar-kepala"><input class="cari" id="kasCari" placeholder="Cari keterangan, kategori, tanggal…"><span class="redup" id="kasJumlah"></span></div>
+            <div id="kasDaftar"></div>
+          </div>
         </div>
-        <div class="kartu"><div class="filter"><label>Bulan<input type="month" id="kasBulan"></label><button class="tombol gelap" id="kasLihat" type="button">Tampilkan</button></div><div id="kasDaftar" style="margin-top:12px"></div></div>
+        <div data-mode="form" class="tersembunyi">
+          <div class="kartu">
+            <div class="kartu-kepala"><h4 id="kasJudul">Input Petty Cash</h4><b id="kasSaldo"></b></div>
+            <div class="form-grid"><label>Tanggal<input type="date" id="kasTgl"></label></div>
+            <div class="tabel-bungkus"><table><thead><tr><th>Kategori</th><th>Keterangan</th><th class="kanan">Nominal (Rp)</th><th></th></tr></thead><tbody id="kasBaris"></tbody></table></div>
+            <div id="kasPesan"></div>
+            <div class="aksi-bawah"><button class="tombol kecil" id="kasTambah" type="button">＋ Tambah baris</button><button class="tombol utama" id="kasSimpan" type="button">Simpan</button></div>
+          </div>
+        </div>
       </section>
 
       <!-- PO KELUAR -->
@@ -398,6 +412,7 @@
     </div>
   </div>
 
+  <div id="areaCetak"></div>
   <div class="garis-muat tersembunyi" id="garisMuat"><span></span></div>
   <div class="memuat tersembunyi" id="memuat"><div class="putar"></div><span id="memuatTeks">Memuat…</span></div>
   <div class="toast" id="toast"></div>

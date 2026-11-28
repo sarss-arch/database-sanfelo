@@ -257,4 +257,44 @@
   .versi-lama { background: #fff6e5; border: 1px solid #f0d9a8; color: #7a5312; border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
   tr.dilihat td { background: var(--hijau-muda); }
   @media (max-width: 900px) { .grid-nota { grid-template-columns: 1fr; } .hero-po { min-width: 0; width: 100%; } }
+
+  /* ===== daftar nota ringkas (seperti Laurence) ===== */
+  .tabel-nota table { width: 100%; table-layout: auto; }
+  .tabel-nota td { vertical-align: top; padding-top: 12px; padding-bottom: 12px; }
+  .tabel-nota td small { display: block; color: var(--redup); font-size: 11px; margin-top: 2px; }
+  .tabel-nota .sub-barang { text-transform: uppercase; max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tabel-nota .nama-pihak { font-weight: 600; }
+  .tabel-nota td { white-space: normal; }
+  .tabel-nota td:nth-child(1), .tabel-nota td:nth-child(2) { white-space: nowrap; }
+  .tabel-nota .ref-pendek { display: inline-block; max-width: 160px; }
+  .tabel-nota .utuh { white-space: nowrap; }
+  .tabel-nota .sub-barang { max-width: 300px; }
+  .aksi-ikon { display: inline-flex; gap: 4px; white-space: nowrap; }
+  .aksi-ikon .tombol-mata { border-color: transparent; background: transparent; }
+  .aksi-ikon .tombol-mata:hover { border-color: var(--garis); background: var(--hijau-muda); }
+  .daftar-kepala .isi-kanan { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .grid-stat.tiga { grid-template-columns: repeat(3, 1fr); margin-bottom: 14px; }
+  .teks-hijau { color: #2f7a4d; font-weight: 700; }
+  .teks-merah { color: #b4473b; font-weight: 700; }
+  /* kas: bulan ‹ › + ringkasan */
+  .kas-atas { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+  .bulan-nav { display: flex; gap: 6px; align-items: center; }
+  .bulan-nav select { width: auto; min-width: 170px; }
+  .kas-ringkas { display: flex; gap: 22px; flex-wrap: wrap; }
+  .kas-ringkas small { display: block; font-size: 11px; color: var(--redup); }
+  .kas-ringkas b { font-size: 15px; }
+  /* PDF rekap (dialog cetak browser) */
+  #areaCetak { display: none; }
+  .rekap-cetak { font-family: 'Plus Jakarta Sans', sans-serif; color: #111; }
+  .rekap-cetak .rekap-kop { margin-bottom: 12px; }
+  .rekap-cetak h2 { margin: 4px 0; font-size: 18px; }
+  .rekap-cetak table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .rekap-cetak th, .rekap-cetak td { border: 1px solid #999; padding: 4px 6px; text-align: left; }
+  .rekap-cetak .kanan { text-align: right; }
+  @media print {
+    body.cetak-rekap #aplikasi, body.cetak-rekap .layar-login, body.cetak-rekap .latar-modal, body.cetak-rekap .garis-muat { display: none !important; }
+    body.cetak-rekap #areaCetak { display: block !important; }
+    @page { size: A4 portrait; margin: 12mm; }
+  }
+  @media (max-width: 900px) { .grid-stat.tiga { grid-template-columns: 1fr; } .tabel-nota .sub-barang { max-width: 200px; } }
 </style>

@@ -122,6 +122,7 @@ const WEB_API_ = {
   versiData: function () { return webVersiData_(); },
   semuaData: function (a) { return webDaftarData_({ sheet: a.sheet, semua: true }); },
   dokumen: function (a) { return webDokumen_(a); },
+  nomorSJ: function () { return webNomorSJBerikut_(); },
   cekHutang: function () { return { tanpaBulan: [], yatim: [], sisaAneh: [] }; }, // pemeriksaan HUTANG baru ada di web SL
   aturPinAdmin: function (a, admin) { return webAturPinAdmin_(a, admin); },
   // WEB_KAS_CRUD.js: ubah / hapus baris petty cash & buku bank
