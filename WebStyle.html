@@ -283,6 +283,13 @@
   .kas-ringkas { display: flex; gap: 22px; flex-wrap: wrap; }
   .kas-ringkas small { display: block; font-size: 11px; color: var(--redup); }
   .kas-ringkas b { font-size: 15px; }
+  /* cetak pengajuan pembayaran hutang (format seperti spreadsheet) */
+  .pengajuan-cetak table { width: 100%; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #000; }
+  .pengajuan-cetak th, .pengajuan-cetak td { border: 1.5px solid #333; padding: 5px 8px; text-align: left; height: 26px; }
+  .pengajuan-cetak th { font-size: 20px; font-weight: 800; background: #f2f2f2; color: #000; letter-spacing: 0; text-transform: none; vertical-align: bottom; }
+  .pengajuan-cetak td { font-size: 16px; color: #000; }
+  .pengajuan-cetak th:nth-child(1) { width: 34%; } .pengajuan-cetak th:nth-child(2) { width: 22%; } .pengajuan-cetak th:nth-child(3) { width: 11%; } .pengajuan-cetak th:nth-child(4) { width: 15%; }
+  .pengajuan-cetak .kanan { text-align: right; }
   /* PDF rekap (dialog cetak browser) */
   #areaCetak { display: none; }
   .rekap-cetak { font-family: 'Plus Jakarta Sans', sans-serif; color: #111; }
