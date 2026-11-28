@@ -35,7 +35,7 @@ function doGet(e) {
   t.konfig = JSON.stringify({
     merek: 'SANFELO', merekPanjang: 'SANFELO LIVING', ketAdj: true, fitur: ['po', 'sj', 'tt', 'biaya', 'spr', 'stok', 'kas', 'laporan', 'cetak', 'latihan', 'alat', 'pok'],
     // rekening supplier untuk cetak pengajuan pembayaran hutang (nama supplier dicocokkan awalan)
-    rekeningSupplier: { 'SIANTAN': ['BCA - ANUGERAH PUTRA SIANTAN P', '3688838888'], 'NATHANIA': ['BCA - NATHANIA FURNITURE PT', '3683080001'] },
+    rekeningSupplier: { 'ANUGERAH PUTRA SIANTAN': ['BCA - ANUGERAH PUTRA SIANTAN P', '3688838888'], 'SIANTAN': ['BCA - ANUGERAH PUTRA SIANTAN P', '3688838888'], 'NATHANIA': ['BCA - NATHANIA FURNITURE PT', '3683080001'] },
     catatan: 'di database_SANFELO, lewat jalur yang sama dengan spreadsheet inventory'
   });
   return t.evaluate()
@@ -126,6 +126,8 @@ const WEB_API_ = {
   dokumen: function (a) { return webDokumen_(a); },
   nomorSJ: function () { return webNomorSJBerikut_(); },
   pdfHtml: function (a) { return webPdfHtml_(a); },
+  riwayatBayarHutang: function (a) { return webRiwayatBayarHutang_(a); },
+  ubahTglBayarHutang: function (a, admin) { return webUbahTglBayarHutang_(a, admin); },
   cekHutang: function () { return { tanpaBulan: [], yatim: [], sisaAneh: [] }; }, // pemeriksaan HUTANG baru ada di web SL
   aturPinAdmin: function (a, admin) { return webAturPinAdmin_(a, admin); },
   // WEB_KAS_CRUD.js: ubah / hapus baris petty cash & buku bank

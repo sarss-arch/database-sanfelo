@@ -37,7 +37,7 @@ const WEB_AKSI_BACA_SAJA_ = {
   pratinjauSJ: 1, masterTT: 1, muatPOKeluarTT: 1, hitungTT: 1, invoiceUntukBiaya: 1, daftarPalet: 1,
   detailPalet: 1, pratinjauSparepart: 1, stok: 1, daftarKas: 1, laporan: 1, tempoTokoDaftar: 1,
   susulanKandidat: 1, statusSJ: 1, groupingDaftar: 1, poKeluarMuat: 1, poKeluarDariPOMasuk: 1,
-  bukaSJ: 1, bukaTT: 1, bukaSpr: 1, siapkanLatihan: 1, daftarAdmin: 1, cekHutang: 1, versiData: 1, bukaPO: 1, semuaData: 1, dokumen: 1, nomorSJ: 1, pdfHtml: 1
+  bukaSJ: 1, bukaTT: 1, bukaSpr: 1, siapkanLatihan: 1, daftarAdmin: 1, cekHutang: 1, versiData: 1, bukaPO: 1, semuaData: 1, dokumen: 1, nomorSJ: 1, pdfHtml: 1, riwayatBayarHutang: 1
 };
 
 const WEB_CACHE_POTONG_ = 90000; // batas 1 nilai CacheService = 100 KB
