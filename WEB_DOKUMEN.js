@@ -13,8 +13,9 @@
 const WEB_DOK_ = {
   PO: [{ sheet: 'HISTORY_PO_MASUK', kunci: ['NO PO'], saring: function (r, h) { return String(r[h['JENIS']] || '').trim().toUpperCase() === 'MASUK'; } }],
   POK: [{ sheet: 'HISTORY_PO_KELUAR', kunci: ['NO PO'] }],
-  SJ: [{ sheet: 'TRANSAKSI', kunci: ['NO SJ'] }, { sheet: 'DETAIL_TRANSAKSI', kunci: ['NO SJ'] }, { sheet: 'PENJUALAN', kunci: ['NO INV'], dari: 'NO INV' }],
-  SPR: [{ sheet: 'SPAREPART', kunci: ['NO SJ', 'NO SPR'] }],
+  // SJ & SPR juga bisa dibuka dari nomor invoice (dari Pembayaran Piutang / Laporan); nomor resmi = NO SJ
+  SJ: [{ sheet: 'TRANSAKSI', kunci: ['NO SJ', 'NO INV'] }, { sheet: 'DETAIL_TRANSAKSI', kunci: ['NO SJ'], dari: 'NO SJ' }, { sheet: 'PENJUALAN', kunci: ['NO INV'], dari: 'NO INV' }],
+  SPR: [{ sheet: 'SPAREPART', kunci: ['NO SJ', 'NO SPR', 'NO INV'] }],
   TT: [{ sheet: 'PEMBELIAN', kunci: ['NO PB'] }]
 };
 const WEB_REVISI_SHEET_ = 'REVISI_NOTA';
@@ -34,14 +35,13 @@ function webBarisNota_(sumber, nomor) {
   const header = semua[0].map(function (x, i) { return String(x || '').trim() || ('KOLOM ' + (i + 1)); });
   const h = {};
   header.forEach(function (x, i) { if (h[x] === undefined) h[x] = i; });
-  let k = -1;
-  sumber.kunci.some(function (n) { if (h[n] !== undefined) { k = h[n]; return true; } return false; });
-  if (k === -1) return { header: header, rows: [] };
+  const ks = sumber.kunci.filter(function (n) { return h[n] !== undefined; }).map(function (n) { return h[n]; });
+  if (!ks.length) return { header: header, rows: [] };
   const target = String(nomor).trim().toUpperCase();
   const rows = [];
   for (let i = 1; i < semua.length; i++) {
     const r = semua[i];
-    if (String(r[k] || '').trim().toUpperCase() !== target) continue;
+    if (!ks.some(function (k) { return String(r[k] || '').trim().toUpperCase() === target; })) continue;
     if (sumber.saring && !sumber.saring(r, h)) continue;
     rows.push(r.map(webNilaiTampil_));
   }
@@ -57,7 +57,8 @@ function webIsiNota_(jenis, nomor) {
   if (!cfg) throw new Error('Jenis nota tidak dikenal.');
   const data = {};
   let nomorLain = {};
-  cfg.forEach(function (s) {
+  let resmi = String(nomor).trim();
+  cfg.forEach(function (s, urutan) {
     let no = nomor;
     if (s.dari) {
       no = nomorLain[s.dari];
@@ -65,9 +66,11 @@ function webIsiNota_(jenis, nomor) {
     }
     const b = webBarisNota_(s, no);
     data[s.sheet] = b;
+    // nomor resmi nota = kolom kunci pertama sheet utama (mis. dibuka dari NO INV -> NO SJ)
+    if (urutan === 0 && b.rows.length) { const ik = b.header.indexOf(s.kunci.filter(function (n) { return b.header.indexOf(n) !== -1; })[0]); if (ik !== -1 && b.rows[0][ik]) resmi = String(b.rows[0][ik]).trim(); }
     if (b.rows.length) b.header.forEach(function (x, i) { if (nomorLain[x] === undefined && b.rows[0][i]) nomorLain[x] = String(b.rows[0][i]).trim(); });
   });
-  return { jenis: jenis, nomor: String(nomor).trim(), data: data };
+  return { jenis: jenis, nomor: resmi, data: data };
 }
 
 function webTotalNota_(isi) {
@@ -173,7 +176,7 @@ function webDokumen_(a) {
   const nomor = String(a.nomor || '').trim();
   if (!WEB_DOK_[jenis]) throw new Error('Jenis nota tidak dikenal.');
   if (!nomor) throw new Error('Nomor nota kosong.');
-  const revisi = webDaftarRevisi_(jenis, nomor, !!a.versi);
+  let revisi = webDaftarRevisi_(jenis, nomor, !!a.versi);
   let isi;
   if (a.versi) {
     const v = revisi.filter(function (x) { return x.versi === Number(a.versi); })[0];
@@ -182,6 +185,7 @@ function webDokumen_(a) {
   } else {
     isi = webIsiNota_(jenis, nomor);
     if (!webAdaIsiNota_(isi)) throw new Error(nomor + ' tidak ditemukan.');
+    if (isi.nomor !== nomor) revisi = webDaftarRevisi_(jenis, isi.nomor, false); // dibuka dari nomor invoice
   }
   return {
     isi: isi, versi: a.versi ? Number(a.versi) : 0,
